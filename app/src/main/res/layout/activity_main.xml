@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/relative_layout"
+    tools:context=".MainActivity">
+
+    <EditText
+        android:id="@+id/urlText"
+        android:hint="Enter url to download file"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:id="@+id/downloadURL"
+        android:text="Download"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/downloadURL"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/view_download"
+        android:text="View download"/>
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:indeterminate="false"
+        android:max = "100"
+        android:layout_below="@id/view_download"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"/>
+    <ProgressBar
+        android:id="@+id/progress_bar2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:indeterminate="false"
+        android:max = "100"
+        android:layout_below="@id/progress_bar"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"/>
+
+    <ProgressBar
+        android:id="@+id/progress_bar3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:indeterminate="false"
+        android:max = "100"
+        android:layout_below="@id/progress_bar2"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"/>
+
+</RelativeLayout>
