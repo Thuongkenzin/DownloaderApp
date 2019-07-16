@@ -5,6 +5,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -39,15 +40,31 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
     public class DownloadViewHolder extends RecyclerView.ViewHolder{
         TextView txtDownloadName;
         ProgressBar pbDownload;
+        Button btnDownload;
 
         public DownloadViewHolder(@NonNull View itemView) {
             super(itemView);
             txtDownloadName = itemView.findViewById(R.id.tv_item_number);
             pbDownload = itemView.findViewById(R.id.pb_item_number);
+            btnDownload = itemView.findViewById(R.id.btn_download);
         }
-        void bind(DownloadTask downloadTask){
+        void bind(final DownloadTask downloadTask){
             txtDownloadName.setText(downloadTask.downloadFileName);
             downloadTask.progressBar = pbDownload;
+            btnDownload.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    String text = btnDownload.getText().toString();
+                    if(text.equals("Pause")) {
+                        btnDownload.setText("Resume");
+                        downloadTask.status =0;
+                    }else if(text.equals("Resume")) {
+                        btnDownload.setText("Pause");
+                        downloadTask.onResume();
+                    }
+
+                }
+            });
         }
 
     }

@@ -7,12 +7,14 @@
     tools:context=".MainActivity">
 
     <Button
+        android:id="@+id/downloadURL"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:id="@+id/downloadURL"
-        android:text="Download"/>
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="151dp"
+        android:layout_marginTop="-2dp"
+        android:text="Download" />
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

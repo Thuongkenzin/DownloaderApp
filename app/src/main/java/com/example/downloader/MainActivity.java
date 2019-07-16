@@ -37,8 +37,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
-
         mDownloadBtn = findViewById(R.id.downloadURL);
 
         mViewBtn = findViewById(R.id.view_download);
@@ -61,12 +59,12 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 String url = "http://androhub.com/demo/demo.pdf";
-                String url2 = "https://api.androidhive.info/progressdialog/hive.jpg";
+                String url2 = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
                 String url3 = "http://androhub.com/demo/demo.mp4";
 
                 if(isConnectingToInternet()) {
                     downloadData.add(new DownloadTask(MainActivity.this, url));
-                    downloadData.add(new DownloadTask(MainActivity.this,url2));
+                   //downloadData.add(new DownloadTask(MainActivity.this,url2));
                     downloadData.add(new DownloadTask(MainActivity.this,url3));
                     mDownloadList.setAdapter(downloadAdapter);
 

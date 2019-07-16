@@ -28,6 +28,7 @@ public class DownloadTask {
     private String downloadUrl;
     String downloadFileName;
 
+    int status;
     ProgressBar progressBar;
     double fileSize =0;
     String fileDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath();
@@ -67,6 +68,7 @@ public class DownloadTask {
             task.execute();
     }
 
+
     private long isIncomplete(){
         File dir = new File(fileDir);
         File file = new File(dir, downloadFileName );
@@ -75,6 +77,22 @@ public class DownloadTask {
             return file.length();
         }
         return 0;
+    }
+    public void onPause(){
+        status = 0;
+    }
+    public boolean isPaused(){
+
+        if(status == 0){
+            return true;
+        }
+        return false;
+    }
+
+    public void onResume(){
+       status = 1;
+       startAsyncTaskInParallel(new DownloadingTask());
+
     }
 
     private class DownloadingTask extends AsyncTask<Void,Integer,Void>{
@@ -96,7 +114,8 @@ public class DownloadTask {
         @Override
         protected Void doInBackground(Void... voids) {
             try {
-                double downloadedSize =0;
+                status = 1;
+                long downloadedSize =0;
                 URL url = new URL(downloadUrl);
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
@@ -147,15 +166,20 @@ public class DownloadTask {
 
                 //int fileLength = connection.getContentLength();
                 FileOutputStream fos;
-
+                if(downloadedSize >0){
                 fos = new FileOutputStream(new File(fileDir,downloadFileName),true);
-
+                }else{
+                    fos = new FileOutputStream(new File(fileDir,downloadFileName));
+                }
 
                 InputStream is = connection.getInputStream();
 
                 byte[] buffer = new byte[1024];
                 int count = 0;
                 while((count = is.read(buffer)) != -1){
+                    if(isPaused()){
+                        break;
+                    }
                     downloadedSize +=count;
                     if(fileSize > 0){
                         //update progress
