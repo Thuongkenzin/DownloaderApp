@@ -26,9 +26,11 @@ public class DownloadTask {
     private static final String TAG = "DownloadTask";
     private Context context;
     private String downloadUrl;
-    private String downloadFileName;
-    private ViewGroup viewGroup;
+    String downloadFileName;
+
     ProgressBar progressBar;
+    double fileSize =0;
+    String fileDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath();
 
     public void initProgressBar(Context context){
         progressBar = new ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal);
@@ -38,6 +40,7 @@ public class DownloadTask {
         progressBar.setIndeterminate(false);
 
     }
+
     public DownloadTask(Context context, String downloadUrl,ProgressBar progressBar){
         this.context = context;
         //this.viewGroup = viewGroup;
@@ -49,6 +52,12 @@ public class DownloadTask {
         startAsyncTaskInParallel(new DownloadingTask());
     }
 
+    public DownloadTask(Context context,String downloadUrl){
+        this.context = context;
+        this.downloadUrl = downloadUrl;
+        this.downloadFileName= downloadUrl.substring(downloadUrl.lastIndexOf('/')+1);
+        startAsyncTaskInParallel(new DownloadingTask());
+    }
     // allow AsyncTask execute parallel
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     private void startAsyncTaskInParallel(DownloadingTask task) {
@@ -56,6 +65,16 @@ public class DownloadTask {
             task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         else
             task.execute();
+    }
+
+    private long isIncomplete(){
+        File dir = new File(fileDir);
+        File file = new File(dir, downloadFileName );
+        if(file.exists()){
+            Log.d("status", "Download is incomplete, file size:" + file.length());
+            return file.length();
+        }
+        return 0;
     }
 
     private class DownloadingTask extends AsyncTask<Void,Integer,Void>{
@@ -77,58 +96,72 @@ public class DownloadTask {
         @Override
         protected Void doInBackground(Void... voids) {
             try {
+                double downloadedSize =0;
                 URL url = new URL(downloadUrl);
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
+                connection.setConnectTimeout(10000);
+                connection.setReadTimeout(10000);
+
+                // connection.connect();
+
+//                if (connection.getResponseCode() !=HttpURLConnection.HTTP_OK){
+//                    Log.e(TAG, "Server return HTTP " + connection.getResponseCode() + " " + connection.getResponseMessage());
+//                }
+//
+//                if (new CheckForSDCard().isSDCardPresent()) {
+//
+//                    //apkStorage = new File(Environment.getExternalStorageDirectory() + "/" + "Android Download");
+//                   // apkStorage = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)  , "/Android_Download");
+//                   apkStorage = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath());
+//                }
+//
+//
+//                if(!apkStorage.exists()){
+//                    apkStorage.mkdir();
+//                    Log.e(TAG,"Directory created.");
+//                }
+
+                long downloaded = isIncomplete();
+                if(downloaded >0){
+                    connection.setRequestProperty("Range","byte="+(downloaded)+"-");
+                    downloadedSize = downloaded;
+                    fileSize = downloaded;
+                }
+                connection.setDoOutput(true);
+
                 connection.connect();
+                fileSize += connection.getContentLength();
 
-                if (connection.getResponseCode() !=HttpURLConnection.HTTP_OK){
-                    Log.e(TAG, "Server return HTTP " + connection.getResponseCode() + " " + connection.getResponseMessage());
-                }
+               // outputFile = new File(apkStorage, downloadFileName);
 
-                if (new CheckForSDCard().isSDCardPresent()) {
-
-                    //apkStorage = new File(Environment.getExternalStorageDirectory() + "/" + "Android Download");
-                   // apkStorage = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)  , "/Android_Download");
-                   apkStorage = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath());
-                }
-
-                if(!apkStorage.exists()){
-                    apkStorage.mkdir();
-                    Log.e(TAG,"Directory created.");
-                }
-
-                outputFile = new File(apkStorage, downloadFileName);
-
-                Log.d(TAG, "File download:" +outputFile.getAbsolutePath());
-
-                if(!outputFile.exists()){
-                    outputFile.createNewFile();
-                    Log.e(TAG, "File Created");
-                    Log.d(TAG, "File download:" +outputFile.getAbsolutePath());
-
-                }
+//                Log.d(TAG, "File download:" +outputFile.getAbsolutePath());
+//
+//                if(!outputFile.exists()){
+//                    outputFile.createNewFile();
+//                    Log.e(TAG, "File Created");
+//                    Log.d(TAG, "File download:" +outputFile.getAbsolutePath());
+//
+//                }
 
 
-                int fileLength = connection.getContentLength();
+                //int fileLength = connection.getContentLength();
+                FileOutputStream fos;
 
-                FileOutputStream fos = new FileOutputStream(outputFile);
+                fos = new FileOutputStream(new File(fileDir,downloadFileName),true);
+
+
                 InputStream is = connection.getInputStream();
 
                 byte[] buffer = new byte[1024];
-                int total =0;
                 int count = 0;
                 while((count = is.read(buffer)) != -1){
-                    total += count;
-                    if(fileLength > 0){
+                    downloadedSize +=count;
+                    if(fileSize > 0){
                         //update progress
-                        publishProgress((int)(100* total/fileLength));
+                        publishProgress((int)(100* downloadedSize/fileSize));
                     }
 
-                    if(isCancelled()){
-                        is.close();
-                        return null;
-                    }
                     fos.write(buffer,0,count);
                 }
 
@@ -136,6 +169,7 @@ public class DownloadTask {
                 fos.flush();
                 fos.close();
                 is.close();
+                connection.disconnect();
 
                 Log.e(TAG,"Done");
             } catch (Exception e) {

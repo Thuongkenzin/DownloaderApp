@@ -6,11 +6,6 @@
     android:id="@+id/relative_layout"
     tools:context=".MainActivity">
 
-    <EditText
-        android:id="@+id/urlText"
-        android:hint="Enter url to download file"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -50,5 +45,12 @@
         android:max = "100"
         android:layout_below="@id/progress_bar2"
         style="@style/Widget.AppCompat.ProgressBar.Horizontal"/>
+
+    <android.support.v7.widget.RecyclerView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/rv_numbers"
+        android:layout_below="@+id/progress_bar3"></android.support.v7.widget.RecyclerView>
+
 
 </RelativeLayout>

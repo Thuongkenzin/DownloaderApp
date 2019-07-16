@@ -9,6 +9,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -18,12 +20,15 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import java.io.File;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-    EditText urlText;
     Button mDownloadBtn;
     Button mViewBtn;
+    private RecyclerView mDownloadList;
+    private DownloadAdapter downloadAdapter;
+    ArrayList<DownloadTask> downloadData = new ArrayList<DownloadTask>();
 
     ProgressBar progressBar1,progressBar2,progressBar3;
 
@@ -33,33 +38,44 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
-        urlText = findViewById(R.id.urlText);
+
         mDownloadBtn = findViewById(R.id.downloadURL);
 
         mViewBtn = findViewById(R.id.view_download);
-        final RelativeLayout rl = findViewById(R.id.relative_layout);
 
         progressBar1 = findViewById(R.id.progress_bar);
+        progressBar1.setContentDescription("Download file");
         progressBar2= findViewById(R.id.progress_bar2);
         progressBar3 = findViewById(R.id.progress_bar3);
+
+        mDownloadList = findViewById(R.id.rv_numbers);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        mDownloadList.setLayoutManager(layoutManager);
+
+        downloadAdapter = new DownloadAdapter(downloadData);
+        mDownloadList.setAdapter(downloadAdapter);
+
 
         mDownloadBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                String url = "https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
+                String url = "http://androhub.com/demo/demo.pdf";
                 String url2 = "https://api.androidhive.info/progressdialog/hive.jpg";
                 String url3 = "http://androhub.com/demo/demo.mp4";
+
                 if(isConnectingToInternet()) {
-                    new DownloadTask(MainActivity.this, url,progressBar1);
-                    new DownloadTask(MainActivity.this,url2,progressBar2);
-                    new DownloadTask(MainActivity.this,url3,progressBar3);
+                    downloadData.add(new DownloadTask(MainActivity.this, url));
+                    downloadData.add(new DownloadTask(MainActivity.this,url2));
+                    downloadData.add(new DownloadTask(MainActivity.this,url3));
+                    mDownloadList.setAdapter(downloadAdapter);
 
                 }else{
                     Toast.makeText(MainActivity.this, "There is no internet connection.", Toast.LENGTH_SHORT).show();
                 }
             }
         });
+
 
         mViewBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -70,6 +86,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+
 
     private void startDownloading(){
         //String url = urlText.getText().toString();
