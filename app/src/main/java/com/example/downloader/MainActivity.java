@@ -58,13 +58,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                String url = "http://androhub.com/demo/demo.pdf";
+                //String url = "http://androhub.com/demo/demo.pdf";
+                String url ="https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
                 String url2 = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
                 String url3 = "http://androhub.com/demo/demo.mp4";
 
                 if(isConnectingToInternet()) {
                     downloadData.add(new DownloadTask(MainActivity.this, url));
-                   //downloadData.add(new DownloadTask(MainActivity.this,url2));
+                    downloadData.add(new DownloadTask(MainActivity.this,url2));
                     downloadData.add(new DownloadTask(MainActivity.this,url3));
                     mDownloadList.setAdapter(downloadAdapter);
 

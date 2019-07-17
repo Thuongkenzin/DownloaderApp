@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -27,10 +28,11 @@ public class DownloadTask {
     private Context context;
     private String downloadUrl;
     String downloadFileName;
+    TextView textViewPercent;
 
-    int status;
+    int status;//status state downloading
     ProgressBar progressBar;
-    double fileSize =0;
+    double fileSize ;
     String fileDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath();
 
     public void initProgressBar(Context context){
@@ -52,6 +54,9 @@ public class DownloadTask {
         this.downloadFileName= downloadUrl.substring(downloadUrl.lastIndexOf('/')+1);
         startAsyncTaskInParallel(new DownloadingTask());
     }
+    public double getFileSize(){
+        return fileSize;
+    }
 
     public DownloadTask(Context context,String downloadUrl){
         this.context = context;
@@ -69,15 +74,6 @@ public class DownloadTask {
     }
 
 
-    private long isIncomplete(){
-        File dir = new File(fileDir);
-        File file = new File(dir, downloadFileName );
-        if(file.exists()){
-            Log.d("status", "Download is incomplete, file size:" + file.length());
-            return file.length();
-        }
-        return 0;
-    }
     public void onPause(){
         status = 0;
     }
@@ -109,6 +105,7 @@ public class DownloadTask {
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
             progressBar.setProgress(values[0]);
+            textViewPercent.setText(values[0] +"%");
         }
 
         @Override
@@ -121,8 +118,6 @@ public class DownloadTask {
                 connection.setRequestMethod("GET");
                 connection.setConnectTimeout(10000);
                 connection.setReadTimeout(10000);
-
-                // connection.connect();
 
 //                if (connection.getResponseCode() !=HttpURLConnection.HTTP_OK){
 //                    Log.e(TAG, "Server return HTTP " + connection.getResponseCode() + " " + connection.getResponseMessage());
@@ -140,17 +135,24 @@ public class DownloadTask {
 //                    apkStorage.mkdir();
 //                    Log.e(TAG,"Directory created.");
 //                }
+//
 
-                long downloaded = isIncomplete();
-                if(downloaded >0){
-                    connection.setRequestProperty("Range","byte="+(downloaded)+"-");
-                    downloadedSize = downloaded;
-                    fileSize = downloaded;
+                File dir = new File(fileDir);
+                File file = new File(dir, downloadFileName );
+                if(file.exists()){
+                    downloadedSize = file.length();
+                    connection.setRequestProperty("Range","bytes="+ downloadedSize +"-");
+                }else{
+                    file.createNewFile();
                 }
-                connection.setDoOutput(true);
 
+                connection.setDoInput(true);
+                connection.setDoOutput(false);
                 connection.connect();
-                fileSize += connection.getContentLength();
+
+                fileSize = connection.getContentLength() + file.length();
+                Log.d(TAG,"length: " +connection.getContentLength());
+                Log.d(TAG, "fileSize:" +fileSize);
 
                // outputFile = new File(apkStorage, downloadFileName);
 
@@ -164,22 +166,19 @@ public class DownloadTask {
 //                }
 
 
-                //int fileLength = connection.getContentLength();
                 FileOutputStream fos;
-                if(downloadedSize >0){
-                fos = new FileOutputStream(new File(fileDir,downloadFileName),true);
+                if(downloadedSize >0 ){
+                    fos = new FileOutputStream(file,true); //if file download incomplete, continue downloading and  append existed file.
                 }else{
-                    fos = new FileOutputStream(new File(fileDir,downloadFileName));
+                    fos = new FileOutputStream(file); //create new file.
                 }
 
                 InputStream is = connection.getInputStream();
 
                 byte[] buffer = new byte[1024];
-                int count = 0;
-                while((count = is.read(buffer)) != -1){
-                    if(isPaused()){
-                        break;
-                    }
+                int count;
+                while((count = is.read(buffer)) != -1 && (!isPaused())){
+
                     downloadedSize +=count;
                     if(fileSize > 0){
                         //update progress
@@ -187,13 +186,16 @@ public class DownloadTask {
                     }
 
                     fos.write(buffer,0,count);
+
                 }
 
-            //close all connection to avoid memory
+            //close all connection to avoid leak memory
                 fos.flush();
                 fos.close();
                 is.close();
-                connection.disconnect();
+                if(connection !=null) {
+                    connection.disconnect();
+                }
 
                 Log.e(TAG,"Done");
             } catch (Exception e) {

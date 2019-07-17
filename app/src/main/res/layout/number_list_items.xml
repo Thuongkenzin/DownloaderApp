@@ -30,4 +30,19 @@
         android:layout_height="wrap_content"
         android:text="Pause" />
 
+    <TextView
+        android:id="@+id/tv_percent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/pb_item_number"
+        android:layout_alignParentStart="true"
+        android:text="" />
+    <TextView
+        android:id="@+id/tv_size_file"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tv_percent"
+        android:layout_alignParentStart="true"
+        android:text="" />
+
 </RelativeLayout>

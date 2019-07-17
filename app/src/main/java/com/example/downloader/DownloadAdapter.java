@@ -38,7 +38,7 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
     }
 
     public class DownloadViewHolder extends RecyclerView.ViewHolder{
-        TextView txtDownloadName;
+        TextView txtDownloadName,tvPercent,tvSizeFileDownload;
         ProgressBar pbDownload;
         Button btnDownload;
 
@@ -47,17 +47,21 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
             txtDownloadName = itemView.findViewById(R.id.tv_item_number);
             pbDownload = itemView.findViewById(R.id.pb_item_number);
             btnDownload = itemView.findViewById(R.id.btn_download);
+            tvPercent = itemView.findViewById(R.id.tv_percent);
+            tvSizeFileDownload = itemView.findViewById(R.id.tv_size_file);
         }
         void bind(final DownloadTask downloadTask){
             txtDownloadName.setText(downloadTask.downloadFileName);
             downloadTask.progressBar = pbDownload;
+            downloadTask.textViewPercent = tvPercent;
+            tvSizeFileDownload.setText(String.valueOf(downloadTask.getFileSize()));
             btnDownload.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     String text = btnDownload.getText().toString();
                     if(text.equals("Pause")) {
                         btnDownload.setText("Resume");
-                        downloadTask.status =0;
+                        downloadTask.onPause();
                     }else if(text.equals("Resume")) {
                         btnDownload.setText("Pause");
                         downloadTask.onResume();
