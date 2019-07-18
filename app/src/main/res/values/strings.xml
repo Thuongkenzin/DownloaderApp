@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Downloader</string>
+    <string name="channel_name">Downloader App</string>
+    <string name="channel_description">Downloading file</string>
 </resources>

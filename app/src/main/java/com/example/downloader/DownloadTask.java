@@ -3,12 +3,18 @@ package com.example.downloader;
 
 import android.annotation.TargetApi;
 import android.app.ActionBar;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,17 +28,25 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Date;
 
 public class DownloadTask {
     private static final String TAG = "DownloadTask";
+    public static final int DOWNLOADING = 0;
+    public static final int COMPLETE = 1;
+    public static final int PAUSE = 2;
+    public static final int CANCEL = 3;
+    private static final String CHANNEL_ID = "Downloader_App";
     private Context context;
     private String downloadUrl;
     String downloadFileName;
     TextView textViewPercent;
+    TextView sizeDownloaded;
+
 
     int status;//status state downloading
     ProgressBar progressBar;
-    double fileSize ;
+    long fileSize ;
     String fileDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath();
 
     public void initProgressBar(Context context){
@@ -75,43 +89,87 @@ public class DownloadTask {
 
 
     public void onPause(){
-        status = 0;
+        status = PAUSE;
     }
     public boolean isPaused(){
 
-        if(status == 0){
+        if(status == DownloadTask.PAUSE){
             return true;
         }
         return false;
     }
 
     public void onResume(){
-       status = 1;
+       status = DOWNLOADING;
        startAsyncTaskInParallel(new DownloadingTask());
 
+    }
+    private void createNotificationChannel(){
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            CharSequence name = context.getString(R.string.channel_name);
+            String description = context.getString(R.string.channel_description);
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID,name,importance);
+            channel.setDescription(description);
+            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
     }
 
     private class DownloadingTask extends AsyncTask<Void,Integer,Void>{
         File apkStorage;
         File outputFile;
-
+        NotificationManagerCompat notificationManager;
+        NotificationCompat.Builder builder;
+        int notificationId;
+        int PROGRESS_MAX =100;
+        int PROGRESS_CURRENT = 0;
         @Override
         protected void onPostExecute(Void aVoid) {
-            Toast.makeText(context, "Download Complete", Toast.LENGTH_SHORT).show();
+            if(status==COMPLETE) {
+                Toast.makeText(context, "Download Complete", Toast.LENGTH_SHORT).show();
+                progressBar.setVisibility(View.INVISIBLE);
+                builder.setContentText("Download Complete")
+                        .setProgress(0,0,false);
+                notificationManager.notify(notificationId,builder.build());
+
+            }
 
         }
 
         @Override
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
-            progressBar.setProgress(values[0]);
+           progressBar.setProgress(values[0]);
             textViewPercent.setText(values[0] +"%");
+            sizeDownloaded.setText(values[1] +"/" +fileSize);
+            PROGRESS_CURRENT = values[0];
+
+//            builder.setProgress(PROGRESS_MAX, PROGRESS_CURRENT, false);
+//            notificationManager.notify(notificationId, builder.build());
+
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            createNotificationChannel();
+            builder = new NotificationCompat.Builder(context,CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_arrow_downward_black_24dp)
+                    .setContentTitle(downloadFileName)
+                    .setContentText("Downloading file ...")
+                    .setPriority(NotificationCompat.PRIORITY_LOW);
+
+            builder.setProgress(PROGRESS_MAX,PROGRESS_CURRENT,true);
+            notificationManager = NotificationManagerCompat.from(context);
+            notificationId = DownloadUtil.createNotificationId();
+            notificationManager.notify(notificationId,builder.build());
         }
 
         @Override
         protected Void doInBackground(Void... voids) {
             try {
-                status = 1;
+                status = DOWNLOADING;
                 long downloadedSize =0;
                 URL url = new URL(downloadUrl);
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -175,20 +233,26 @@ public class DownloadTask {
 
                 InputStream is = connection.getInputStream();
 
-                byte[] buffer = new byte[1024];
+                byte[] buffer = new byte[8192];
                 int count;
+                int percent =0;
                 while((count = is.read(buffer)) != -1 && (!isPaused())){
 
                     downloadedSize +=count;
                     if(fileSize > 0){
                         //update progress
-                        publishProgress((int)(100* downloadedSize/fileSize));
+                        percent = (int)(100*downloadedSize/fileSize);
+                        publishProgress(percent, (int)downloadedSize );
+
                     }
 
                     fos.write(buffer,0,count);
 
                 }
 
+                if(percent == 100){
+                    status = COMPLETE;
+                }
             //close all connection to avoid leak memory
                 fos.flush();
                 fos.close();

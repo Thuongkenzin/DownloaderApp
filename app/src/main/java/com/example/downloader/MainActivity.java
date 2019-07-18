@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private DownloadAdapter downloadAdapter;
     ArrayList<DownloadTask> downloadData = new ArrayList<DownloadTask>();
 
-    ProgressBar progressBar1,progressBar2,progressBar3;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,10 +41,6 @@ public class MainActivity extends AppCompatActivity {
 
         mViewBtn = findViewById(R.id.view_download);
 
-        progressBar1 = findViewById(R.id.progress_bar);
-        progressBar1.setContentDescription("Download file");
-        progressBar2= findViewById(R.id.progress_bar2);
-        progressBar3 = findViewById(R.id.progress_bar3);
 
         mDownloadList = findViewById(R.id.rv_numbers);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
@@ -61,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
                 //String url = "http://androhub.com/demo/demo.pdf";
                 String url ="https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
                 String url2 = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-                String url3 = "http://androhub.com/demo/demo.mp4";
+                String url3 = "http://speedtest.ftp.otenet.gr/files/test10Mb.db";
 
                 if(isConnectingToInternet()) {
                     downloadData.add(new DownloadTask(MainActivity.this, url));

@@ -54,6 +54,7 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
             txtDownloadName.setText(downloadTask.downloadFileName);
             downloadTask.progressBar = pbDownload;
             downloadTask.textViewPercent = tvPercent;
+            downloadTask.sizeDownloaded = tvSizeFileDownload;
             tvSizeFileDownload.setText(String.valueOf(downloadTask.getFileSize()));
             btnDownload.setOnClickListener(new View.OnClickListener() {
                 @Override
