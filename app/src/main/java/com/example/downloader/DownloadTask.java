@@ -42,6 +42,7 @@ public class DownloadTask {
     String downloadFileName;
     TextView textViewPercent;
     TextView sizeDownloaded;
+    int notificationId ;
 
 
     int status;//status state downloading
@@ -76,6 +77,7 @@ public class DownloadTask {
         this.context = context;
         this.downloadUrl = downloadUrl;
         this.downloadFileName= downloadUrl.substring(downloadUrl.lastIndexOf('/')+1);
+        notificationId = DownloadUtil.createNotificationId();
         startAsyncTaskInParallel(new DownloadingTask());
     }
     // allow AsyncTask execute parallel
@@ -104,6 +106,14 @@ public class DownloadTask {
        startAsyncTaskInParallel(new DownloadingTask());
 
     }
+    public boolean isCancel(){
+        if(status == CANCEL)
+            return true;
+        return false;
+    }
+    public void onCancelled(){
+        status = CANCEL;
+    }
     private void createNotificationChannel(){
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
             CharSequence name = context.getString(R.string.channel_name);
@@ -121,7 +131,6 @@ public class DownloadTask {
         File outputFile;
         NotificationManagerCompat notificationManager;
         NotificationCompat.Builder builder;
-        int notificationId;
         int PROGRESS_MAX =100;
         int PROGRESS_CURRENT = 0;
         @Override
@@ -140,13 +149,11 @@ public class DownloadTask {
         @Override
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
-           progressBar.setProgress(values[0]);
+            progressBar.setProgress(values[0]);
             textViewPercent.setText(values[0] +"%");
             sizeDownloaded.setText(values[1] +"/" +fileSize);
-            PROGRESS_CURRENT = values[0];
-
-//            builder.setProgress(PROGRESS_MAX, PROGRESS_CURRENT, false);
-//            notificationManager.notify(notificationId, builder.build());
+//           builder.setProgress(PROGRESS_MAX, PROGRESS_CURRENT, false);
+//           notificationManager.notify(notificationId, builder.build());
 
         }
 
@@ -162,7 +169,6 @@ public class DownloadTask {
 
             builder.setProgress(PROGRESS_MAX,PROGRESS_CURRENT,true);
             notificationManager = NotificationManagerCompat.from(context);
-            notificationId = DownloadUtil.createNotificationId();
             notificationManager.notify(notificationId,builder.build());
         }
 
@@ -226,18 +232,22 @@ public class DownloadTask {
 
                 FileOutputStream fos;
                 if(downloadedSize >0 ){
-                    fos = new FileOutputStream(file,true); //if file download incomplete, continue downloading and  append existed file.
+                    fos = new FileOutputStream(file,true); //if file download incomplete, continue downloading and append existed file.
                 }else{
                     fos = new FileOutputStream(file); //create new file.
                 }
 
                 InputStream is = connection.getInputStream();
 
-                byte[] buffer = new byte[8192];
+                byte[] buffer = new byte[1024];
                 int count;
                 int percent =0;
                 while((count = is.read(buffer)) != -1 && (!isPaused())){
 
+                    if(isCancel()){
+                        outputFile =null;
+                        break;
+                    }
                     downloadedSize +=count;
                     if(fileSize > 0){
                         //update progress

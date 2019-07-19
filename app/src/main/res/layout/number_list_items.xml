@@ -26,6 +26,7 @@
         android:id="@+id/btn_download"
         android:layout_margin="10dp"
         android:layout_alignParentEnd="true"
+        android:layout_below="@+id/btn_cancel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Pause" />
@@ -46,4 +47,11 @@
         android:text="" />
 
 
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:id="@+id/btn_cancel"
+        android:layout_alignParentRight="true"
+        android:src="@drawable/ic_cancel_black_24dp"/>
 </RelativeLayout>

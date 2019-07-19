@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -43,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
 
 
         mDownloadList = findViewById(R.id.rv_numbers);
+        RecyclerView.ItemDecoration itemDecoration = new DividerItemDecoration(this, DividerItemDecoration.VERTICAL);
+        mDownloadList.addItemDecoration(itemDecoration);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         mDownloadList.setLayoutManager(layoutManager);
 
@@ -63,8 +66,8 @@ public class MainActivity extends AppCompatActivity {
                     downloadData.add(new DownloadTask(MainActivity.this, url));
                     downloadData.add(new DownloadTask(MainActivity.this,url2));
                     downloadData.add(new DownloadTask(MainActivity.this,url3));
-                    mDownloadList.setAdapter(downloadAdapter);
 
+                    downloadAdapter.notifyDataSetChanged();
                 }else{
                     Toast.makeText(MainActivity.this, "There is no internet connection.", Toast.LENGTH_SHORT).show();
                 }
@@ -95,7 +98,6 @@ public class MainActivity extends AppCompatActivity {
 
         //set title download notification
         request.setDescription("Downloading file...");
-
 
         request.allowScanningByMediaScanner();
         request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);

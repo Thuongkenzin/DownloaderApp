@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -41,6 +42,7 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
         TextView txtDownloadName,tvPercent,tvSizeFileDownload;
         ProgressBar pbDownload;
         Button btnDownload;
+        ImageButton btnCancel;
 
         public DownloadViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -49,6 +51,7 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
             btnDownload = itemView.findViewById(R.id.btn_download);
             tvPercent = itemView.findViewById(R.id.tv_percent);
             tvSizeFileDownload = itemView.findViewById(R.id.tv_size_file);
+            btnCancel = itemView.findViewById(R.id.btn_cancel);
         }
         void bind(final DownloadTask downloadTask){
             txtDownloadName.setText(downloadTask.downloadFileName);
@@ -68,6 +71,13 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
                         downloadTask.onResume();
                     }
 
+                }
+            });
+
+            btnCancel.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    downloadTask.onCancelled();
                 }
             });
         }
