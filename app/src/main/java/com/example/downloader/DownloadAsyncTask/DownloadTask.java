@@ -1,34 +1,30 @@
-package com.example.downloader;
+package com.example.downloader.DownloadAsyncTask;
 
 
 import android.annotation.TargetApi;
-import android.app.ActionBar;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.example.downloader.DownloadUtil;
+import com.example.downloader.R;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Date;
 
 public class DownloadTask {
     private static final String TAG = "DownloadTask";
@@ -43,6 +39,7 @@ public class DownloadTask {
     TextView textViewPercent;
     TextView sizeDownloaded;
     int notificationId ;
+
 
 
     int status;//status state downloading

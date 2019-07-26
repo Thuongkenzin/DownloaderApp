@@ -1,6 +1,7 @@
 package com.example.downloader;
 
 import android.os.Environment;
+import android.os.Handler;
 import android.util.Log;
 
 import java.io.File;
@@ -9,7 +10,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class DownloadThread extends Thread {
+public class DownloadThread implements Runnable {
     private static final String TAG = "DownloadThread";
     private UpdateProgressListener listener;
     String urlDownload;
@@ -96,7 +97,6 @@ public class DownloadThread extends Thread {
             }else{
                 fos = new FileOutputStream(file);
             }
-
             InputStream is = connection.getInputStream();
             byte[] buffer = new byte[1024];
             int count;

@@ -11,47 +11,50 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
+
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.TabLayout;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.view.GravityCompat;
+import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.DividerItemDecoration;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+
 import android.support.v7.widget.Toolbar;
-import android.text.InputType;
+
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
+
 
 import android.widget.Toast;
 
+
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button mDownloadBtn;
-    Button mViewBtn;
-    private RecyclerView mDownloadList;
-    private FloatingActionButton addLink;
-//    private DownloadAdapter downloadAdapter;
-//    List<DownloadTask> downloadData = new ArrayList<DownloadTask>();
-    private DownloadThreadAdapter downloadThreadAdapter;
-    List<DownloadThread> downloadList = new ArrayList<DownloadThread>();
-    private DrawerLayout mDrawerLayout;
+    final com.example.downloader.DownloadManager downloadManager = com.example.downloader.DownloadManager.getInstance();
 
+    private DrawerLayout mDrawerLayout;
+    private TabAdapter mTabAdapter;
+    private TabLayout mTabLayout;
+    private ViewPager mPageViewer;
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+
+        switch (item.getItemId()){
+            case R.id.browser_internet:
+               String url = "https://google.com";
+               startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                break;
+            case R.id.open_download:
+                startActivity(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS));
+                break;
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -60,88 +63,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mDownloadBtn = findViewById(R.id.downloadURL);
-        addLink = findViewById(R.id.fab_add_link);
-        mViewBtn = findViewById(R.id.view_download);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
-        actionBar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
+       // actionBar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
 
 
-        mDownloadList = findViewById(R.id.rv_numbers);
-        RecyclerView.ItemDecoration itemDecoration = new DividerItemDecoration(this, DividerItemDecoration.VERTICAL);
-        mDownloadList.addItemDecoration(itemDecoration);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        mDownloadList.setLayoutManager(layoutManager);
 
-//        downloadAdapter = new DownloadAdapter(downloadData);
-//        mDownloadList.setAdapter(downloadAdapter);
-
-        final com.example.downloader.DownloadManager downloadManager = com.example.downloader.DownloadManager.getInstance();
-        downloadList = downloadManager.getListDownload();
-        downloadThreadAdapter = new DownloadThreadAdapter();
-        mDownloadList.setAdapter(downloadThreadAdapter);
-
-        //handle download file
-        addLink.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //init a dialog to get link
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("Add link to download:");
-
-                final EditText input = new EditText(MainActivity.this);
-                input.setInputType(InputType.TYPE_CLASS_TEXT);
-                input.setHint("Type or paste link");
-                builder.setView(input);
-
-                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        String url = input.getText().toString();
-                        downloadManager.startUrlDownload(url);
-                        downloadThreadAdapter.notifyItemInserted(0);
-                    }
-                });
-
-                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-                builder.show();
-            }
-        });
-        mDownloadBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String url ="https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
-                String url2 = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-                String url3 = "http://speedtest.ftp.otenet.gr/files/test10Mb.db";
-                if(isConnectingToInternet()){
-                   downloadManager.startUrlDownload(url);
-                   downloadManager.startUrlDownload(url2);
-                   //downloadManager.startUrlDownload(url3);
-                   downloadThreadAdapter.notifyDataSetChanged();
-                }else{
-                    Toast.makeText(MainActivity.this, "There is no internet connection", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-
-        //open download folder
-        mViewBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS));
-                //openDownloadFolder();
-
-            }
-        });
+        createViewPagerLayout();
 
         mDrawerLayout = findViewById(R.id.drawer_layout);
 
@@ -163,7 +94,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
     }
 
     @Override
@@ -177,6 +107,23 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu,menu);
+        return true;
+    }
+
+    private void createViewPagerLayout(){
+        mPageViewer = findViewById(R.id.view_pager);
+        mTabLayout = findViewById(R.id.tabLayout);
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        mTabAdapter = new TabAdapter(fragmentManager);
+        mTabAdapter.addFragment(new FragmentPendingDownload(),"Pending Download");
+        mTabAdapter.addFragment(new FragmentCompleteDownload(),"File Downloaded");
+        mPageViewer.setAdapter(mTabAdapter);
+        mTabLayout.setupWithViewPager(mPageViewer);
+    }
+
     private void openDownloadFolder(){
         if(new CheckForSDCard().isSDCardPresent()){
 
@@ -187,7 +134,6 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "There is no directory", Toast.LENGTH_SHORT).show();
             }
             else{
-
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath() +"/" +"Android Download");
                 Uri uri2 = Uri.parse(Environment.DIRECTORY_DOWNLOADS);
@@ -195,7 +141,6 @@ public class MainActivity extends AppCompatActivity {
                 intent.setDataAndType(uri2, "*/*");
                 //startActivity(Intent.createChooser(intent,"Open Download Folder"));
                 startActivity(intent);
-
             }
         }else {
             Toast.makeText(MainActivity.this, "There is no SD Card.", Toast.LENGTH_SHORT).show();
@@ -212,4 +157,9 @@ public class MainActivity extends AppCompatActivity {
             return false;
     }
 
+    @Override
+    protected void onDestroy() {
+        downloadManager.getPool().shutdown();
+        super.onDestroy();
+    }
 }

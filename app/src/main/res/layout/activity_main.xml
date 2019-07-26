@@ -5,15 +5,14 @@
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:openDrawer="start"
-    android:fitsSystemWindows="true">
+    android:fitsSystemWindows="true"
+    tools:openDrawer="start">
 
     <RelativeLayout
         android:id="@+id/relative_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context=".MainActivity">
-
 
         <android.support.v7.widget.Toolbar
             android:id="@+id/toolbar"
@@ -23,39 +22,30 @@
             android:theme="@style/ThemeOverlay.AppCompat.ActionBar">
 
         </android.support.v7.widget.Toolbar>
-        <Button
-            android:id="@+id/downloadURL"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_below="@+id/toolbar"
-            android:layout_marginStart="151dp"
-            android:layout_marginTop="-2dp"
-            android:text="Download" />
 
-        <Button
-            android:id="@+id/view_download"
-            android:layout_width="wrap_content"
+        <android.support.design.widget.TabLayout
+            android:id="@+id/tabLayout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/downloadURL"
-            android:layout_centerHorizontal="true"
-            android:text="View download" />
+            android:layout_below="@id/toolbar"
+            android:minHeight="?actionBarSize"
+            app:tabBackground="@color/colorPrimary"
+            app:tabGravity="fill"
+            app:tabIndicatorColor="@color/cardview_light_background"
+            app:tabIndicatorHeight="4dp"
+            app:tabMode="fixed">
 
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/rv_numbers"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/view_download"></android.support.v7.widget.RecyclerView>
+        </android.support.design.widget.TabLayout>
 
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/fab_add_link"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentEnd="true"
-            android:layout_margin="16dp"
-            android:src="@drawable/ic_add" />
+        <android.support.v4.view.ViewPager
+            android:id="@+id/view_pager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/tabLayout">
+        </android.support.v4.view.ViewPager>
+
     </RelativeLayout>
+
     <android.support.design.widget.NavigationView
         android:id="@+id/nav_view"
         android:layout_width="wrap_content"

@@ -1,4 +1,4 @@
-package com.example.downloader;
+package com.example.downloader.DownloadAsyncTask;
 
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
@@ -11,7 +11,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 
-import java.util.ArrayList;
+import com.example.downloader.R;
+
 import java.util.List;
 
 public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.DownloadViewHolder> {

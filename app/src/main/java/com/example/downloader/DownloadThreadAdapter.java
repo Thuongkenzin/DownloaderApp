@@ -1,5 +1,8 @@
 package com.example.downloader;
 
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -67,13 +70,18 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
                 public void updateProgress(final int progress, final long sizeDownloaded) {
                     downloadThread.setPercent(progress);
                     pbDownload.setProgress(progress);
+                    final String sizeDownload = DownloadUtil.getStringSizeLengthFile(sizeDownloaded);
+                    final String totalSizeFile =DownloadUtil.getStringSizeLengthFile(downloadThread.getFileSize());
                     tvPercent.postDelayed(new Runnable() {
                         @Override
                         public void run() {
                             tvPercent.setText(progress +"%");
                             if(progress == 100){
-                                pbDownload.setVisibility(View.INVISIBLE);
-                                btnDownload.setText("DONE");
+                                pbDownload.invalidate();
+                                //add thread download to the list DownloadComplete and remove in listDownloadPending when download complete
+                                downloadManager.addDownloadThreadCompleteToTheList(downloadThread);
+                                //notify adapter
+                                notifyItemRemoved(getAdapterPosition());
                             }
                         }
                     },500);
@@ -81,7 +89,7 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
                     tvSizeFileDownload.postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            tvSizeFileDownload.setText(sizeDownloaded +"/" + downloadThread.getFileSize());
+                            tvSizeFileDownload.setText(sizeDownload +"/" + totalSizeFile);
                         }
                     },500);
 
@@ -105,8 +113,24 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
             btnCancel.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    downloadManager.cancelDownload(downloadThread.getID());
-                    notifyItemRemoved(getAdapterPosition());
+                    downloadThread.onPause();
+                    AlertDialog.Builder builder = new AlertDialog.Builder(pbDownload.getContext());
+                    builder.setTitle("Do you want to stop downloading this file?");
+                    builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            downloadManager.cancelDownload(downloadThread.getID());
+                            notifyItemRemoved(getAdapterPosition());
+                        }
+                    });
+                    builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.cancel();
+                            downloadThread.onResume();
+                        }
+                    });
+                    builder.show();
                 }
             });
         }

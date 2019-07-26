@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:title="Search"
+        app:showAsAction="always"
+        android:id="@+id/search_menu"
+        android:icon="@drawable/ic_search_view"/>
+    <item
+        android:title="Browser Internet"
+        android:id="@+id/browser_internet"
+        android:icon="@drawable/icons_internet"
+        app:showAsAction="always"/>
+
+    <item
+        android:title="Delete list"
+        android:id="@+id/delete_list"
+        app:showAsAction="collapseActionView"/>
+    <item
+        android:title="Open download"
+        android:id="@+id/open_download"
+        app:showAsAction="collapseActionView"/>
+</menu>
