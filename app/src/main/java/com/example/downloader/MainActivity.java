@@ -5,13 +5,16 @@ import android.app.DownloadManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.StrictMode;
 import android.support.annotation.NonNull;
-
+import com.example.downloader.Database.DownloadContract.DownloadEntry;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.FragmentManager;
@@ -31,6 +34,9 @@ import android.view.MenuItem;
 
 import android.widget.Toast;
 
+
+import com.example.downloader.Database.DownloadContract;
+import com.example.downloader.Database.DownloadDatabaseHelper;
 
 import java.io.File;
 
@@ -64,14 +70,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
+        StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+        StrictMode.setVmPolicy(builder.build());
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
        // actionBar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
 
-
-
+        displayDatabaseInfo();
         createViewPagerLayout();
 
         mDrawerLayout = findViewById(R.id.drawer_layout);
@@ -159,7 +166,19 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        downloadManager.getPool().shutdown();
+        //downloadManager.getPool().shutdown();
         super.onDestroy();
+    }
+    private void displayDatabaseInfo(){
+        DownloadDatabaseHelper databaseInstance = DownloadDatabaseHelper.getInstance(this);
+
+        SQLiteDatabase db = databaseInstance.getReadableDatabase();
+
+        Cursor cursor = db.rawQuery("SELECT * FROM " + DownloadEntry.TABLE_NAME,null);
+        try{
+            Log.v("Number of column: ", "Number:"+ cursor.getCount());
+        } finally {
+            cursor.close();
+        }
     }
 }

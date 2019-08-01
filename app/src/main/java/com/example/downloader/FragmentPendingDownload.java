@@ -57,13 +57,13 @@ public class FragmentPendingDownload extends Fragment {
                 String url3 = "http://speedtest.ftp.otenet.gr/files/test10Mb.db";
                 if(isConnectingToInternet()){
 //                    downloadManager.startUrlDownload(url);
-                  downloadManager.startUrlDownload(url2);
+                    downloadManager.startUrlDownload(url2);
                     downloadManager.startUrlDownload(url3);
                     downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_30mb.mp4");
-                    downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_2mb.mp4");
-              //      downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4");
+                    //  downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_2mb.mp4");
+                    //      downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4");
                     downloadThreadAdapter.notifyDataSetChanged();
-                }else{
+                } else {
                     Toast.makeText(getContext(), "There is no internet connection", Toast.LENGTH_SHORT).show();
                 }
             }

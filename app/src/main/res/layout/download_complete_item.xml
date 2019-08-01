@@ -19,11 +19,11 @@
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:id="@+id/btn_cancel"
+        android:id="@+id/btn_option"
         android:layout_marginEnd="16dp"
         android:layout_marginTop="10dp"
+        android:backgroundTint="@null"
         android:layout_alignParentEnd="true"
-        android:contentDescription="Option"
-        android:src="@drawable/ic_close_black_24dp"/>
+        android:contentDescription="@string/image_item_option"
+        android:src="@drawable/ic_more_vert"/>
 </RelativeLayout>

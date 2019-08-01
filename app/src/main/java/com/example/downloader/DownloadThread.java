@@ -22,6 +22,8 @@ public class DownloadThread implements Runnable {
     private boolean mFinished;
     int ID;
     String fileDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath();
+    String filePathDownload ;
+    File fileDownload;
     long fileSize = 0;
 
     public void setOnUpdateProgressListener(UpdateProgressListener listener){
@@ -76,6 +78,8 @@ public class DownloadThread implements Runnable {
             //Check file exist or not
             File dir = new File(fileDir);
             File file = new File(dir, downloadFileName);
+            fileDownload = file;
+            filePathDownload = file.getAbsolutePath();
             if(file.exists()){
                 downloadedSize = file.length();
                 connection.setRequestProperty("Range","bytes="+ downloadedSize +"-");
@@ -98,31 +102,36 @@ public class DownloadThread implements Runnable {
                 fos = new FileOutputStream(file);
             }
             InputStream is = connection.getInputStream();
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[4096];
+            int prevPercent =0;
             int count;
-            while((count = is.read(buffer)) != -1){
-                downloadedSize += count;
-                if(fileSize >0){
-                    //update process
-                    percent = (int)(100*downloadedSize/fileSize);
+            if(fileSize > 0) {
+                while ((count = is.read(buffer)) != -1) {
+                    downloadedSize += count;
 
-                    if(listener != null) {
-                        listener.updateProgress(percent,downloadedSize);
-                    }
+                        //update process
+                        percent = (int)(100 * downloadedSize / fileSize);
 
-                    synchronized (mPauseLock){
-                        while(mPaused){
-                            mPauseLock.wait();
+                        if (listener != null && percent % 2 == 0 && prevPercent != percent) {
+                            listener.updateProgress( percent, downloadedSize);
+                            prevPercent = percent;
                         }
-                    }
 
-                }
-                fos.write(buffer,0,count);
-                if(mCancelled){
-                    file.delete();
-                    break;
+                        synchronized (mPauseLock) {
+                            while (mPaused) {
+                                mPauseLock.wait();
+                            }
+                        }
+
+
+                    fos.write(buffer, 0, count);
+                    if (mCancelled) {
+                        file.delete();
+                        break;
+                    }
                 }
             }
+
 
             fos.flush();
             fos.close();

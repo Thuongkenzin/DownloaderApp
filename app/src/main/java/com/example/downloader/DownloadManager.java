@@ -1,5 +1,11 @@
 package com.example.downloader;
 
+import android.content.Context;
+
+import com.example.downloader.Database.DownloadContract;
+import com.example.downloader.Database.DownloadDatabaseHelper;
+import com.example.downloader.Database.FileDownload;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -52,6 +58,18 @@ public class DownloadManager {
         DownloadThread newDownload = new DownloadThread(++ID,url);
         listDownload.add(0,newDownload);
         pool.submit(newDownload);
+
+    }
+    public void getListDownloadFromDatabase(Context context){
+        DownloadDatabaseHelper dataInstance = DownloadDatabaseHelper.getInstance(context);
+        List<FileDownload> fileList = dataInstance.getAllFileDownload();
+        for(FileDownload file : fileList){
+            if(file.getState() == DownloadContract.DownloadEntry.STATE_UNCOMPLETE){
+                listDownload.add(new DownloadThread(file.get_id(),file.getUrlDownload()));
+            }else{
+                //add complete download file
+            }
+        }
     }
 
     public void cancelDownload(int id){

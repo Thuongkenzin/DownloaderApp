@@ -70,8 +70,8 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
                 public void updateProgress(final int progress, final long sizeDownloaded) {
                     downloadThread.setPercent(progress);
                     pbDownload.setProgress(progress);
-                    final String sizeDownload = DownloadUtil.getStringSizeLengthFile(sizeDownloaded);
-                    final String totalSizeFile =DownloadUtil.getStringSizeLengthFile(downloadThread.getFileSize());
+                    //final String sizeDownload =DownloadUtil.getStringSizeLengthFile(sizeDownloaded) ;
+                   // final String totalSizeFile =DownloadUtil.getStringSizeLengthFile(downloadThread.getFileSize());
                     tvPercent.postDelayed(new Runnable() {
                         @Override
                         public void run() {
@@ -89,7 +89,7 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
                     tvSizeFileDownload.postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            tvSizeFileDownload.setText(sizeDownload +"/" + totalSizeFile);
+                            tvSizeFileDownload.setText(DownloadUtil.getStringSizeLengthFile(sizeDownloaded) +"/" + DownloadUtil.getStringSizeLengthFile(downloadThread.getFileSize()));
                         }
                     },500);
 
