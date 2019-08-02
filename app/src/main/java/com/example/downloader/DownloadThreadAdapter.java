@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +13,9 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import com.example.downloader.Database.DownloadDatabaseHelper;
+import com.example.downloader.Database.FileDownload;
 
 import java.util.List;
 
@@ -78,6 +82,10 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
                             tvPercent.setText(progress +"%");
                             if(progress == 100){
                                 pbDownload.invalidate();
+                                //update database download complete;
+                                DownloadDatabaseHelper.getInstance(pbDownload.getContext()).updateFileDownload(new FileDownload(downloadThread.getID(),
+                                        downloadThread.getDownloadFileName(),downloadThread.getUrlDownload(),downloadThread.getmState(),downloadThread.filePathDownload));
+                                Log.d("IDownload","ID: " + downloadThread.getID());
                                 //add thread download to the list DownloadComplete and remove in listDownloadPending when download complete
                                 downloadManager.addDownloadThreadCompleteToTheList(downloadThread);
                                 //notify adapter
@@ -119,7 +127,7 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
                     builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            downloadManager.cancelDownload(downloadThread.getID());
+                            downloadManager.cancelDownload(downloadThread.getID(),btnCancel.getContext());
                             notifyItemRemoved(getAdapterPosition());
                         }
                     });

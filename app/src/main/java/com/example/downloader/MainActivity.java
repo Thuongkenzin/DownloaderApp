@@ -173,12 +173,9 @@ public class MainActivity extends AppCompatActivity {
         DownloadDatabaseHelper databaseInstance = DownloadDatabaseHelper.getInstance(this);
 
         SQLiteDatabase db = databaseInstance.getReadableDatabase();
+        downloadManager.getListDownloadFromDatabase(this);
 
-        Cursor cursor = db.rawQuery("SELECT * FROM " + DownloadEntry.TABLE_NAME,null);
-        try{
-            Log.v("Number of column: ", "Number:"+ cursor.getCount());
-        } finally {
-            cursor.close();
-        }
+
+
     }
 }

@@ -4,6 +4,8 @@ import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
 
+import com.example.downloader.Database.DownloadContract;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -19,15 +21,23 @@ public class DownloadThread implements Runnable {
     private Object mPauseLock;
     private boolean mPaused;
     private boolean mCancelled;
-    private boolean mFinished;
+    private int mState;
     int ID;
     String fileDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath();
-    String filePathDownload ;
+    public String filePathDownload ;
     File fileDownload;
     long fileSize = 0;
 
     public void setOnUpdateProgressListener(UpdateProgressListener listener){
         this.listener = listener;
+    }
+
+    public int getmState() {
+        return mState;
+    }
+
+    public void setmState(int mState) {
+        this.mState = mState;
     }
 
     public void setPercent(int percent) {
@@ -61,8 +71,11 @@ public class DownloadThread implements Runnable {
         mCancelled = false;
         this.urlDownload = url;
         this.downloadFileName = url.substring(url.lastIndexOf('/')+1);
+        filePathDownload = fileDir +"/" + downloadFileName;
+        this.mState = DownloadContract.DownloadEntry.STATE_UNCOMPLETE;
         Log.v(TAG, "File Name: " + this.downloadFileName);
     }
+
 
     @Override
     public void run() {
@@ -132,6 +145,9 @@ public class DownloadThread implements Runnable {
                 }
             }
 
+            if(percent == 100){
+                mState= DownloadContract.DownloadEntry.STATE_COMPLETE;
+            }
 
             fos.flush();
             fos.close();
@@ -144,6 +160,7 @@ public class DownloadThread implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
             Log.e(TAG," Download Error Exception " +e.getMessage());
+
 
         }
 

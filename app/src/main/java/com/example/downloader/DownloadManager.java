@@ -1,6 +1,7 @@
 package com.example.downloader;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.example.downloader.Database.DownloadContract;
 import com.example.downloader.Database.DownloadDatabaseHelper;
@@ -16,10 +17,12 @@ public class DownloadManager {
     private static DownloadManager instance;
     private List<DownloadThread> listDownload ;
     private List <DownloadThread> completeDownloadedList;
+    private List <FileDownload> completeListDownload;
     private UpdateListDownloadListener listenerUpdate;
     private DownloadManager(){
         listDownload = new ArrayList<DownloadThread>();
         completeDownloadedList = new ArrayList<DownloadThread>();
+        completeListDownload = new ArrayList<FileDownload>();
     }
     public static int ID =0;
     private ExecutorService pool = Executors.newFixedThreadPool(THREAD_POOL_SIZES);
@@ -54,12 +57,26 @@ public class DownloadManager {
             pool.submit(thread);
         }
     }
-    public void startUrlDownload(String url){
-        DownloadThread newDownload = new DownloadThread(++ID,url);
+    public void startUrlDownload(String url, int id){
+        DownloadThread newDownload = new DownloadThread(id,url);
         listDownload.add(0,newDownload);
         pool.submit(newDownload);
 
     }
+    public void addFileDownloadToData(Context context,String url){
+        DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
+        FileDownload fileDownload = new FileDownload(url, DownloadContract.DownloadEntry.STATE_UNCOMPLETE);
+        Log.d("DownloadManager","fileDownloadid" + fileDownload.get_id());
+        databaseHelper.addFile(fileDownload);
+        fileDownload.set_id(databaseHelper.getLastItemIdDownload());
+        Log.d("DownloadManager","fileDownloadIdAfter:" + fileDownload.get_id());
+        DownloadThread newDownload = new DownloadThread(fileDownload.get_id(),fileDownload.getUrlDownload());
+        listDownload.add(0,newDownload);
+        pool.submit(newDownload);
+
+    }
+
+
     public void getListDownloadFromDatabase(Context context){
         DownloadDatabaseHelper dataInstance = DownloadDatabaseHelper.getInstance(context);
         List<FileDownload> fileList = dataInstance.getAllFileDownload();
@@ -68,15 +85,19 @@ public class DownloadManager {
                 listDownload.add(new DownloadThread(file.get_id(),file.getUrlDownload()));
             }else{
                 //add complete download file
+                completeListDownload.add(file);
             }
         }
     }
 
-    public void cancelDownload(int id){
+
+
+    public void cancelDownload(int id,Context context){
         for(int i =0;i<listDownload.size();i++){
             DownloadThread thread = listDownload.get(i);
             if(thread.getID() == id){
                 thread.onCancelled();
+                DownloadDatabaseHelper.getInstance(context).deleteFileDownload(id);
                 listDownload.remove(thread);
             }
         }

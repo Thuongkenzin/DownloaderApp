@@ -7,6 +7,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 import com.example.downloader.Database.DownloadContract.DownloadEntry;
+import com.example.downloader.DownloadThread;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,8 +57,27 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
 
         db.insert(DownloadEntry.TABLE_NAME,null, values);
 
-        db.close();
 
+    }
+
+    public int getLastItemIdDownload(){
+        SQLiteDatabase db = this.getReadableDatabase();
+        String selectQuery = "SELECT * FROM " + DownloadEntry.TABLE_NAME;
+
+        int positionId = -1;
+        Cursor cursor = db.rawQuery(selectQuery, null);
+        try{
+            if(cursor.moveToLast()){
+                positionId =Integer.parseInt(cursor.getString(cursor.getColumnIndex(DownloadEntry._ID)));
+            }
+        }catch (Exception e){
+            Log.d(TAG, "Error while trying to get file list from database");
+        }finally {
+            if (cursor != null && !cursor.isClosed()) {
+                cursor.close();
+            }
+        }
+        return positionId;
     }
 
     public int updateFileDownload(FileDownload file){
@@ -70,10 +91,9 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
         return db.update(DownloadEntry.TABLE_NAME,values,DownloadEntry._ID + "=?" ,new String[]{String.valueOf(file.get_id())});
 
     }
-    public void deleteFileDownload(FileDownload file){
+    public void deleteFileDownload(int id){
         SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(DownloadEntry.TABLE_NAME,DownloadEntry._ID + "=?" ,new String[]{String.valueOf(file.get_id())});
-        db.close();
+        db.delete(DownloadEntry.TABLE_NAME,DownloadEntry._ID + "=?" ,new String[]{String.valueOf(id)});
     }
 
     public List<FileDownload> getAllFileDownload(){
@@ -106,10 +126,10 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
         return fileLists;
 
     }
+
     public void deleteAllFileDownload(){
         SQLiteDatabase db = getWritableDatabase();
         db.delete(DownloadEntry.TABLE_NAME,null,null);
-        db.close();
     }
     //Database info
 //    private static final String TAG = "DownloadDataHelper";

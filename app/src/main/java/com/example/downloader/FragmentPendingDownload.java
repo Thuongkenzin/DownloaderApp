@@ -23,6 +23,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.example.downloader.Database.DownloadContract;
+import com.example.downloader.Database.DownloadDatabaseHelper;
+import com.example.downloader.Database.FileDownload;
+
 
 public class FragmentPendingDownload extends Fragment {
     Button mDownloadBtn;
@@ -57,9 +61,9 @@ public class FragmentPendingDownload extends Fragment {
                 String url3 = "http://speedtest.ftp.otenet.gr/files/test10Mb.db";
                 if(isConnectingToInternet()){
 //                    downloadManager.startUrlDownload(url);
-                    downloadManager.startUrlDownload(url2);
-                    downloadManager.startUrlDownload(url3);
-                    downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_30mb.mp4");
+//                    downloadManager.startUrlDownload(url2);
+//                    downloadManager.startUrlDownload(url3);
+//                    downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_30mb.mp4");
                     //  downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_2mb.mp4");
                     //      downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4");
                     downloadThreadAdapter.notifyDataSetChanged();
@@ -95,7 +99,11 @@ public class FragmentPendingDownload extends Fragment {
                     public void onClick(DialogInterface dialog, int which) {
                         String url = input.getText().toString();
                         if(URLUtil.isValidUrl(url)) {
-                            downloadManager.startUrlDownload(url);
+                            //them vao database
+                            //FileDownload fileDownload = new FileDownload(url,DownloadContract.DownloadEntry.STATE_UNCOMPLETE);
+//                            DownloadDatabaseHelper.getInstance(getContext()).addFile(fileDownload);
+//                            downloadManager.startUrlDownload(url,fileDownload._id);
+                            downloadManager.addFileDownloadToData(getContext(),url);
                             downloadThreadAdapter.notifyItemInserted(0);
                         }else{
                             Toast.makeText(getContext(), "Url is invalid, please try again!", Toast.LENGTH_SHORT).show();
