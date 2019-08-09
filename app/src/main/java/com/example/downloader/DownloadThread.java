@@ -11,25 +11,44 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class DownloadThread implements Runnable {
     private static final String TAG = "DownloadThread";
     private UpdateProgressListener listener;
     String urlDownload;
     String downloadFileName;
-    private int percent ;
+    private int percent;
     private Object mPauseLock;
     private boolean mPaused;
     private boolean mCancelled;
     private int mState;
     int ID;
     String fileDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath();
-    public String filePathDownload ;
+    public String filePathDownload;
     File fileDownload;
     long fileSize = 0;
 
-    public void setOnUpdateProgressListener(UpdateProgressListener listener){
+
+    public void setOnUpdateProgressListener(UpdateProgressListener listener) {
         this.listener = listener;
+    }
+
+    public boolean ismCancelled() {
+        return mCancelled;
+    }
+
+    public void setmCancelled(boolean mCancelled) {
+        this.mCancelled = mCancelled;
+    }
+
+    public boolean ismPaused() {
+        return mPaused;
+    }
+
+    public void setmPaused(boolean mPaused) {
+        this.mPaused = mPaused;
     }
 
     public int getmState() {
@@ -70,8 +89,8 @@ public class DownloadThread implements Runnable {
         mPaused = false;
         mCancelled = false;
         this.urlDownload = url;
-        this.downloadFileName = url.substring(url.lastIndexOf('/')+1);
-        filePathDownload = fileDir +"/" + downloadFileName;
+        this.downloadFileName = url.substring(url.lastIndexOf('/') + 1);
+        filePathDownload = fileDir + "/" + downloadFileName;
         this.mState = DownloadContract.DownloadEntry.STATE_UNCOMPLETE;
         Log.v(TAG, "File Name: " + this.downloadFileName);
     }
@@ -93,10 +112,10 @@ public class DownloadThread implements Runnable {
             File file = new File(dir, downloadFileName);
             fileDownload = file;
             filePathDownload = file.getAbsolutePath();
-            if(file.exists()){
+            if (file.exists()) {
                 downloadedSize = file.length();
-                connection.setRequestProperty("Range","bytes="+ downloadedSize +"-");
-            }else{
+                connection.setRequestProperty("Range", "bytes=" + downloadedSize + "-");
+            } else {
                 file.createNewFile();
             }
 
@@ -105,37 +124,47 @@ public class DownloadThread implements Runnable {
             connection.connect();
 
             fileSize = downloadedSize + connection.getContentLength();
-            Log.v(TAG, "length:" +downloadedSize);
-            Log.v(TAG,"total:" +fileSize);
+            Log.v(TAG, "length:" + downloadedSize);
+            Log.v(TAG, "total:" + fileSize);
 
             FileOutputStream fos;
-            if(downloadedSize > 0){
-                fos = new FileOutputStream(file,true);
-            }else{
+            if (downloadedSize > 0) {
+                fos = new FileOutputStream(file, true);
+            } else {
                 fos = new FileOutputStream(file);
             }
             InputStream is = connection.getInputStream();
             byte[] buffer = new byte[4096];
-            int prevPercent =0;
+            int prevPercent = 0;
             int count;
-            if(fileSize > 0) {
+            long startTime;
+            long speedDownload = 0;
+            long sizeDownloadIntervalTime = 0;
+            if (fileSize > 0) {
+                startTime = System.currentTimeMillis();
                 while ((count = is.read(buffer)) != -1) {
                     downloadedSize += count;
+                    sizeDownloadIntervalTime += count;
+                    //update process
+                    percent = (int) (100 * downloadedSize / fileSize);
 
-                        //update process
-                        percent = (int)(100 * downloadedSize / fileSize);
-
-                        if (listener != null && percent % 2 == 0 && prevPercent != percent) {
-                            listener.updateProgress( percent, downloadedSize);
-                            prevPercent = percent;
+                    if (listener != null && prevPercent != percent ) {
+                        long endTime = System.currentTimeMillis();
+                        if( endTime != startTime) { // prevent exception divide by zero
+                            speedDownload = sizeDownloadIntervalTime * 1000 / (endTime - startTime);
                         }
 
-                        synchronized (mPauseLock) {
-                            while (mPaused) {
-                                mPauseLock.wait();
-                            }
-                        }
+                        listener.updateProgress(percent, downloadedSize, speedDownload);
+                        prevPercent = percent;
+                        sizeDownloadIntervalTime = 0;
+                        startTime = endTime;
+                    }
 
+                    synchronized (mPauseLock) {
+                        while (mPaused) {
+                            mPauseLock.wait();
+                        }
+                    }
 
                     fos.write(buffer, 0, count);
                     if (mCancelled) {
@@ -145,40 +174,41 @@ public class DownloadThread implements Runnable {
                 }
             }
 
-            if(percent == 100){
-                mState= DownloadContract.DownloadEntry.STATE_COMPLETE;
+            if (percent == 100) {
+                mState = DownloadContract.DownloadEntry.STATE_COMPLETE;
             }
 
             fos.flush();
             fos.close();
             is.close();
-            if(connection != null){
+            if (connection != null) {
                 connection.disconnect();
             }
             Log.e(TAG, "Done");
 
         } catch (Exception e) {
             e.printStackTrace();
-            Log.e(TAG," Download Error Exception " +e.getMessage());
-
+            Log.e(TAG, " Download Error Exception " + e.getMessage());
 
         }
 
     }
-    public void onPause(){
-        synchronized (mPauseLock){
+
+    public void onPause() {
+        synchronized (mPauseLock) {
             mPaused = true;
         }
     }
 
-    public void onResume(){
-        synchronized (mPauseLock){
+    public void onResume() {
+        synchronized (mPauseLock) {
             mPaused = false;
             mPauseLock.notifyAll();
         }
     }
-    public void onCancelled(){
-        if(mPaused == true){
+
+    public void onCancelled() {
+        if (mPaused == true) {
             onResume();
         }
         mCancelled = true;

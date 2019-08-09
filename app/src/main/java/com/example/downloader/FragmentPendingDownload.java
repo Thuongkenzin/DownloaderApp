@@ -64,8 +64,11 @@ public class FragmentPendingDownload extends Fragment {
 //                    downloadManager.startUrlDownload(url2);
 //                    downloadManager.startUrlDownload(url3);
 //                    downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_30mb.mp4");
-                    //  downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_2mb.mp4");
-                    //      downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4");
+                    //downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_2mb.mp4");
+                    //downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4");
+                    downloadManager.addFileDownloadToData(getContext(),url);
+                    downloadManager.addFileDownloadToData(getContext(),url2);
+                    downloadManager.addFileDownloadToData(getContext(),url3);
                     downloadThreadAdapter.notifyDataSetChanged();
                 } else {
                     Toast.makeText(getContext(), "There is no internet connection", Toast.LENGTH_SHORT).show();
@@ -77,8 +80,12 @@ public class FragmentPendingDownload extends Fragment {
         mViewBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(android.app.DownloadManager.ACTION_VIEW_DOWNLOADS));
+               //startActivity(new Intent(android.app.DownloadManager.ACTION_VIEW_DOWNLOADS));
                 //openDownloadFolder();
+                DownloadMultipleChunk download = new DownloadMultipleChunk();
+
+                Thread thread = new Thread(download);
+                thread.start();
 
             }
         });
@@ -100,9 +107,6 @@ public class FragmentPendingDownload extends Fragment {
                         String url = input.getText().toString();
                         if(URLUtil.isValidUrl(url)) {
                             //them vao database
-                            //FileDownload fileDownload = new FileDownload(url,DownloadContract.DownloadEntry.STATE_UNCOMPLETE);
-//                            DownloadDatabaseHelper.getInstance(getContext()).addFile(fileDownload);
-//                            downloadManager.startUrlDownload(url,fileDownload._id);
                             downloadManager.addFileDownloadToData(getContext(),url);
                             downloadThreadAdapter.notifyItemInserted(0);
                         }else{

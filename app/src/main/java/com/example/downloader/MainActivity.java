@@ -14,7 +14,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.StrictMode;
 import android.support.annotation.NonNull;
-import com.example.downloader.Database.DownloadContract.DownloadEntry;
+
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.FragmentManager;
@@ -30,12 +30,8 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-
-
 import android.widget.Toast;
 
-
-import com.example.downloader.Database.DownloadContract;
 import com.example.downloader.Database.DownloadDatabaseHelper;
 
 import java.io.File;
@@ -66,9 +62,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //turnOnStrictMode();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
 
         StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
         StrictMode.setVmPolicy(builder.build());
@@ -131,6 +127,20 @@ public class MainActivity extends AppCompatActivity {
         mTabLayout.setupWithViewPager(mPageViewer);
     }
 
+    private void turnOnStrictMode(){
+        StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+                .detectDiskReads()
+                .detectDiskWrites()
+                .detectNetwork()   // or .detectAll() for all detectable problems
+                .penaltyLog()
+                .build());
+        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                .detectLeakedSqlLiteObjects()
+                .detectLeakedClosableObjects()
+                .penaltyLog()
+                .penaltyDeath()
+                .build());
+    }
     private void openDownloadFolder(){
         if(new CheckForSDCard().isSDCardPresent()){
 
@@ -167,6 +177,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         //downloadManager.getPool().shutdown();
+        DownloadDatabaseHelper.getInstance(getApplicationContext()).close();
         super.onDestroy();
     }
     private void displayDatabaseInfo(){
@@ -174,8 +185,7 @@ public class MainActivity extends AppCompatActivity {
 
         SQLiteDatabase db = databaseInstance.getReadableDatabase();
         downloadManager.getListDownloadFromDatabase(this);
-
-
+        downloadManager.startAllDownload();
 
     }
 }

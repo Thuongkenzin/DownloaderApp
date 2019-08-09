@@ -96,6 +96,27 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
         db.delete(DownloadEntry.TABLE_NAME,DownloadEntry._ID + "=?" ,new String[]{String.valueOf(id)});
     }
 
+    public FileDownload getFileItemDownload(int id){
+        SQLiteDatabase db = this.getReadableDatabase();
+        String[] projection = {DownloadEntry._ID, DownloadEntry.COLUMN_FILE_NAME, DownloadEntry.COLUMN_FILE_URL,
+                DownloadEntry.COLUMN_FILE_DIR,DownloadEntry.COLUMN_FILE_STATE};
+        String selection = DownloadEntry._ID + "=?";
+        String[] selectionArgs = {String.valueOf(id)};
+        Cursor cursor = db.query(DownloadEntry.TABLE_NAME, projection,selection,selectionArgs,null,null,null);
+        if(cursor != null){
+            cursor.moveToFirst();
+            FileDownload file = new FileDownload();
+            file.set_id(Integer.parseInt(cursor.getString(cursor.getColumnIndex(DownloadEntry._ID))));
+            file.setFileName(cursor.getString(cursor.getColumnIndex(DownloadEntry.COLUMN_FILE_NAME)));
+            file.setState(Integer.parseInt(cursor.getString(cursor.getColumnIndex(DownloadEntry.COLUMN_FILE_STATE))));
+            file.setUriFileDir(cursor.getString(cursor.getColumnIndex(DownloadEntry.COLUMN_FILE_DIR)));
+            file.setUrlDownload(cursor.getString(cursor.getColumnIndex(DownloadEntry.COLUMN_FILE_URL)));
+            return file;
+        }
+        cursor.close();
+        return null;
+    }
+
     public List<FileDownload> getAllFileDownload(){
         List<FileDownload> fileLists = new ArrayList<FileDownload>();
         String selectQuery = "SELECT * FROM " + DownloadEntry.TABLE_NAME;
@@ -131,97 +152,6 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = getWritableDatabase();
         db.delete(DownloadEntry.TABLE_NAME,null,null);
     }
-    //Database info
-//    private static final String TAG = "DownloadDataHelper";
-//    private static final String DATABASE_NAME = "DownloadDatabase";
-//    private static final int DATABASE_VERSION = 1;
-//
-//    //Table name
-//    private static final String TABLE_FILE = "filedownloads";
-//
-//    //file table column
-//    private static final String FILE_ID ="_id";
-//    private static final String FILE_NAME = "file_name";
-//    private static final String FILE_URL = "url_file";
-//    private static  DownloadDatabaseHelper dataInstance;
-//
-//    public static synchronized DownloadDatabaseHelper getInstance(Context context){
-//        if(dataInstance == null){
-//            dataInstance = new DownloadDatabaseHelper(context.getApplicationContext());
-//        }
-//        return dataInstance;
-//    }
-//    private DownloadDatabaseHelper(Context context){
-//        super(context,DATABASE_NAME,null,DATABASE_VERSION);
-//    }
-//
-//    @Override
-//    public void onCreate(SQLiteDatabase db) {
-//        String CREATION_DOWNLOAD_TABLE = "CREATE TABLE " + TABLE_FILE + "(" + FILE_ID + " INTEGER PRIMARY KEY,"
-//                + FILE_NAME + " TEXT," + FILE_URL + " TEXT" +")";
-//        db.execSQL(CREATION_DOWNLOAD_TABLE);
-//    }
-//
-//    @Override
-//    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-//        if(oldVersion != newVersion) {
-//            db.execSQL("DROP TABLE IF EXISTS " + TABLE_FILE);
-//            onCreate(db);
-//        }
-//    }
-//
-//    public void addFile(FileDownload fileDownload){
-//        SQLiteDatabase db = getWritableDatabase();
-//
-//        db.beginTransaction();
-//
-//    }
-//
-//    public long addOrUpdateFile(FileDownload fileDownload){
-//        SQLiteDatabase db = getWritableDatabase();
-//        long fileId = -1;
-//
-//        db.beginTransaction();
-//        try {
-//            ContentValues values = new ContentValues();
-//            values.put(FILE_NAME, fileDownload.fileName);
-//            values.put(FILE_URL, fileDownload.urlDownload);
-//
-//            int rows = db.update(TABLE_FILE, values, FILE_NAME + "= ?", new String[]{fileDownload.fileName});
-//
-//            //check if update succeeded
-//            if (rows == 1) {
-//                String fileSelectQuery = String.format("SELECT %s FROM %s WHERE %s = ?", FILE_ID, TABLE_FILE, FILE_NAME);
-//                Cursor cursor = db.rawQuery(fileSelectQuery, new String[]{String.valueOf(fileDownload.fileName)});
-//                try {
-//                    if (cursor.moveToFirst()) {
-//                        fileId = cursor.getInt(0);
-//                        db.setTransactionSuccessful();
-//                    }
-//                } finally {
-//                    if (cursor != null && !cursor.isClosed()) {
-//                        cursor.close();
-//                    }
-//                }
-//            } else {
-//                fileId = db.insertOrThrow(TABLE_FILE, null, values);
-//                db.setTransactionSuccessful();
-//            }
-//
-//        } catch (Exception e) {
-//            Log.d(TAG, "Error while trying to add or update user");
-//        } finally {
-//            db.endTransaction();
-//        }
-//        return fileId;
-//    }
-//
-//
-//    public List<FileDownload> getAllFileDownload(){
-//        List<FileDownload> listDownload = new ArrayList<>();
-//
-//
-//    }
 
 }
 

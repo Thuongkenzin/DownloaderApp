@@ -10,7 +10,7 @@ public class DownloadUtil {
 
         DecimalFormat df = new DecimalFormat("0.00");
 
-        float sizeKb = 1024.0f;
+        float sizeKb = 1000.0f;
         float sizeMb = sizeKb * sizeKb;
         float sizeGb = sizeMb * sizeKb;
         float sizeTerra = sizeGb * sizeKb;

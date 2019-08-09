@@ -39,10 +39,17 @@
         android:layout_alignParentStart="true"
         />
     <TextView
-        android:id="@+id/tv_size_file"
+        android:id="@+id/tv_speed_download"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/tv_percent"
+        android:layout_alignParentStart="true"
+        />
+    <TextView
+        android:id="@+id/tv_size_file"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tv_speed_download"
         android:layout_alignParentStart="true"
          />
 
