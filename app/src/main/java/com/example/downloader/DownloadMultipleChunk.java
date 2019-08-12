@@ -11,12 +11,16 @@ import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DownloadMultipleChunk implements Runnable {
     private static final String TAG = DownloadMultipleChunk.class.getSimpleName();
-    String fileName = "206402main_jsc2007e113280_hires.jpg";
+    String fileName = "BigBuckBunny.mp4";
     String pathFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath()+"/"+fileName;
-    String urlDownload = "https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
+    //String urlDownload = "https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
+    String urlDownload ="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+    List<DownloadChunk> listChunkDownload = new ArrayList<>();
 
     @Override
     public void run() {
@@ -34,6 +38,7 @@ public class DownloadMultipleChunk implements Runnable {
                 urlConnection.disconnect();
             }
             divideChunkToDownload(length,fileChannel);
+            startDownloadMultipleChunk();
             Log.v(TAG,"length file: " +fileDir.length());
         } catch (Exception e) {
             e.printStackTrace();
@@ -42,29 +47,29 @@ public class DownloadMultipleChunk implements Runnable {
     }
 
     public void divideChunkToDownload(final long length,FileChannel fileChannel) {
-        Thread download_1 = new Thread(new DownloadChunk(urlDownload,0,length/2,pathFile+ ".01",fileChannel));
-        download_1.start();
-        Thread download_2 = new Thread(new DownloadChunk(urlDownload,length/2+1,length,pathFile + ".02",fileChannel));
-        //download_2.start();
+        DownloadChunk download_1 = new DownloadChunk(urlDownload,0,length/3,fileChannel);
+        listChunkDownload.add(download_1);
+        DownloadChunk download_2 = new DownloadChunk(urlDownload,length/3+1,length/3*2,fileChannel);
+        listChunkDownload.add(download_2);
+        DownloadChunk download_3 = new DownloadChunk(urlDownload,length/3*2 +1,length,fileChannel);
+        listChunkDownload.add(download_3);
     }
 
-
-    public void join(String filePath){
-        long lengthInFile = 0;
-        long length =0;
-        int count = 1;
-        try{
-            File filename = new File(filePath);
-            RandomAccessFile outFile = new RandomAccessFile(filename,"rw");
-            while(true){
-                filename = new File(filePath + count +".sp");
-                if(filename.exists()){
-
-                }
-            }
-        }catch (Exception e){
-            e.printStackTrace();
+    public void startDownloadMultipleChunk(){
+        for(DownloadChunk chunk : listChunkDownload){
+            chunk.start();
         }
     }
+    public void pauseChunkDownload(){
+        for (DownloadChunk chunk: listChunkDownload){
+            chunk.onPause();
+        }
+    }
+    public void resumeChunkDownload(){
+        for (DownloadChunk chunk: listChunkDownload){
+            chunk.onResume();
+        }
+    }
+
 }
 

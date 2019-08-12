@@ -10,21 +10,24 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-public class DownloadChunk implements Runnable {
+public class DownloadChunk extends Thread {
     private final static String TAG = DownloadChunk.class.getSimpleName();
     String urlDownload;
     long start;
     long end;
-    String pathFile;
     FileChannel fileChannel;
-
-    public DownloadChunk(String urlDownload, long start, long end, String pathFile,FileChannel fileChannel) {
+    boolean pauseChunkDownload;
+    Object lockObject;
+    public DownloadChunk(String urlDownload, long start, long end,FileChannel fileChannel) {
         this.urlDownload = urlDownload;
         this.start = start;
         this.end = end;
-        this.pathFile = pathFile;
         this.fileChannel = fileChannel;
+        this.pauseChunkDownload = false;
+        lockObject = new Object();
     }
 
     @Override
@@ -42,27 +45,39 @@ public class DownloadChunk implements Runnable {
             Log.v(TAG, "length1:" + fileSize);
 
             InputStream in = connection.getInputStream();
-            File file = new File(pathFile);
-            FileOutputStream fos = new FileOutputStream(file);
             byte[] buffer = new byte[4000];
             int count = 0;
             long position = start;
             while((count = in.read(buffer))!=-1){
-                fos.write(buffer,0,count);
-                ByteBuffer buff = ByteBuffer.allocate(4000);
-                buff.clear();
-                buff.put(buffer);
-               // buff.put(buffer,0,buffer.length);
-                buff.flip();
-                fileChannel.write(buff,position);
+                //fos.write(buffer,0,count);
+                ByteBuffer byteBuffer = ByteBuffer.wrap(buffer,0,count);
+                byteBuffer.rewind();
+                synchronized (lockObject){
+                    while(pauseChunkDownload){
+                        lockObject.wait();
+                    }
+                }
+                fileChannel.write(byteBuffer,position);
                 position = position + count;
+
             }
-            Log.v(TAG,"Done "+ pathFile);
-            Log.v(TAG,"file"+ pathFile+ "leng: "+ file.length());
             Log.v(TAG,"file Lenght:"+ fileChannel.size());
             connection.disconnect();
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+    public void onPause(){
+        synchronized (lockObject) {
+            pauseChunkDownload = true;
+            Log.v(TAG,"Pause");
+        }
+    }
+    public void onResume(){
+        synchronized (lockObject){
+            pauseChunkDownload = false;
+            Log.v(TAG,"Resume");
+            lockObject.notifyAll();
         }
     }
 }
