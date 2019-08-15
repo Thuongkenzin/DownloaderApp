@@ -1,6 +1,11 @@
 package com.example.downloader.Database;
 
+import com.example.downloader.DownloadChunk.DownloadChunk;
+import com.example.downloader.DownloadChunk.DownloadMultipleChunk;
 import com.example.downloader.DownloadThread;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class FileDownload {
     public int _id;
@@ -8,12 +13,14 @@ public class FileDownload {
     public String urlDownload;
     public int state;
     public String uriFileDir;
-    private DownloadThread downloadThread;
+    private List<DownloadChunk> listChunks;
 
     public FileDownload(String urlDownload,int state){
         this.urlDownload = urlDownload;
         this.state = state;
         this.fileName = urlDownload.substring(urlDownload.lastIndexOf('/')+1);
+        this.listChunks = new ArrayList<>();
+
     }
     public FileDownload(){
 
@@ -27,9 +34,14 @@ public class FileDownload {
         this.uriFileDir = uriFileDir;
     }
 
-    public DownloadThread getDownloadThread(){
-        return downloadThread;
+    public List<DownloadChunk> getListChunks() {
+        return listChunks;
     }
+
+    public void setListChunks(List<DownloadChunk> listChunks) {
+        this.listChunks = listChunks;
+    }
+
     public int get_id() {
         return _id;
     }

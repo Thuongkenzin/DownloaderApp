@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.example.downloader.Database.DownloadContract;
 import com.example.downloader.Database.DownloadDatabaseHelper;
+import com.example.downloader.DownloadChunk.DownloadMultipleChunk;
 import com.example.downloader.Database.FileDownload;
 
 import java.util.ArrayList;
@@ -19,8 +20,10 @@ public class DownloadManager {
     private List<FileDownload> completeListDownload;
     private UpdateListDownloadListener listenerUpdate;
 
+    private List<DownloadMultipleChunk> listDownloadFile;
     private DownloadManager() {
-        listDownload = new ArrayList<DownloadThread>();
+       // listDownload = new ArrayList<DownloadThread>();
+        listDownloadFile = new ArrayList<>();
         completeListDownload = new ArrayList<FileDownload>();
     }
 
@@ -50,9 +53,12 @@ public class DownloadManager {
         return instance;
     }
 
-    public List<DownloadThread> getListDownload() {
-        return listDownload;
+    public List<DownloadMultipleChunk> getListDownloadFile(){
+        return listDownloadFile;
     }
+//    public List<DownloadThread> getListDownload() {
+//        return listDownload;
+//    }
 
     public ExecutorService getPool() {
         return pool;
@@ -65,25 +71,25 @@ public class DownloadManager {
         }
     }
 
-    public void startUrlDownload(String url, int id) {
-        DownloadThread newDownload = new DownloadThread(id, url);
-        listDownload.add(0, newDownload);
-        pool.submit(newDownload);
+    public void startUrlDownload(String url) {
+        DownloadMultipleChunk downloadTask = new DownloadMultipleChunk(url);
+        listDownloadFile.add(0,downloadTask);
+        pool.submit(downloadTask);
 
     }
 
-    public void addFileDownloadToData(Context context, String url) {
-        DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
-        FileDownload fileDownload = new FileDownload(url, DownloadContract.DownloadEntry.STATE_UNCOMPLETE);
-        Log.d("DownloadManager", "fileDownloadid" + fileDownload.get_id());
-        databaseHelper.addFile(fileDownload);
-        fileDownload.set_id(databaseHelper.getLastItemIdDownload());
-        Log.d("DownloadManager", "fileDownloadIdAfter:" + fileDownload.get_id());
-        DownloadThread newDownload = new DownloadThread(fileDownload.get_id(), fileDownload.getUrlDownload());
-        listDownload.add(0, newDownload);
-        pool.submit(newDownload);
-
-    }
+//    public void addFileDownloadToData(Context context, String url) {
+//        DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
+//        FileDownload fileDownload = new FileDownload(url, DownloadContract.DownloadEntry.STATE_UNCOMPLETE);
+//        Log.d("DownloadManager", "fileDownloadid" + fileDownload.get_id());
+//        databaseHelper.addFile(fileDownload);
+//        fileDownload.set_id(databaseHelper.getLastItemIdDownload());
+//        Log.d("DownloadManager", "fileDownloadIdAfter:" + fileDownload.get_id());
+//        DownloadThread newDownload = new DownloadThread(fileDownload.get_id(), fileDownload.getUrlDownload());
+//        listDownload.add(0, newDownload);
+//        pool.submit(newDownload);
+//
+//    }
 
 
     public void getListDownloadFromDatabase(Context context) {
@@ -101,12 +107,13 @@ public class DownloadManager {
 
 
     public void cancelDownload(int id, Context context) {
-        for (int i = 0; i < listDownload.size(); i++) {
-            DownloadThread thread = listDownload.get(i);
-            if (thread.getID() == id) {
-                thread.onCancelled();
-                DownloadDatabaseHelper.getInstance(context).deleteFileDownload(id);
-                listDownload.remove(thread);
+        for (int i = 0; i < listDownloadFile.size(); i++) {
+            DownloadMultipleChunk thread = listDownloadFile.get(i);
+            if (thread.getId() == id) {
+                thread.cancelChunkDownload();
+                //DownloadDatabaseHelper.getInstance(context).deleteFileDownload(id);
+                //listDownload.remove(thread);
+                listDownloadFile.remove(thread);
             }
         }
     }
@@ -124,5 +131,18 @@ public class DownloadManager {
                 listDownload.remove(thread);
             }
         }
+    }
+    public void startUrlDownloadFile(String url,Context context){
+        //add file download to database
+        DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
+        DownloadMultipleChunk downloadTask = new DownloadMultipleChunk(url);
+        downloadTask.divideChunkToDownload(url);
+        FileDownload fileDownload = new FileDownload(url,DownloadContract.DownloadEntry.STATE_UNCOMPLETE);
+        fileDownload.setListChunks(downloadTask.getListChunkDownload());
+        databaseHelper.addFile(fileDownload);
+        //add list file download
+        listDownloadFile.add(0,downloadTask);
+        //start download
+        pool.submit(downloadTask);
     }
 }

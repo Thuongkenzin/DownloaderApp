@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
         actionBar.setDisplayHomeAsUpEnabled(true);
        // actionBar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
 
-        displayDatabaseInfo();
+        //displayDatabaseInfo();
         createViewPagerLayout();
 
         mDrawerLayout = findViewById(R.id.drawer_layout);

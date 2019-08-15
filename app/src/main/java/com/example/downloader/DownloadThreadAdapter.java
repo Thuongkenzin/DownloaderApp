@@ -1,7 +1,6 @@
 package com.example.downloader;
 
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
@@ -15,17 +14,20 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.downloader.Database.DownloadDatabaseHelper;
+import com.example.downloader.DownloadChunk.DownloadMultipleChunk;
 import com.example.downloader.Database.FileDownload;
 
 import java.util.List;
 
 public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAdapter.DownloadViewHolder> {
 
-    List<DownloadThread> downloadList;
+    //List<DownloadThread> downloadList;
+    List<DownloadMultipleChunk> downloadList;
     DownloadManager downloadManager = DownloadManager.getInstance();
 
     public DownloadThreadAdapter() {
-        this.downloadList = DownloadManager.getInstance().getListDownload();
+        //this.downloadList = DownloadManager.getInstance().getListDownload();
+        this.downloadList = DownloadManager.getInstance().getListDownloadFile();
     }
 
     @NonNull
@@ -39,7 +41,6 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
     @Override
     public void onBindViewHolder(@NonNull DownloadViewHolder downloadViewHolder, int i) {
         downloadViewHolder.bind(downloadList.get(i));
-
     }
 
 
@@ -69,18 +70,18 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
             btnCancel = itemView.findViewById(R.id.btn_cancel);
         }
 
-        void bind(final DownloadThread downloadThread) {
+        void bind(final DownloadMultipleChunk downloadThread) {
             pbDownload.setProgress(downloadThread.getPercent());
-            if (downloadThread.ismPaused() == true) {
+            if (downloadThread.getStateDownload() == DownloadMultipleChunk.DOWNLOAD_PAUSE) {
                 btnDownload.setText("Resume");
-            } else {
+            } else if(downloadThread.getStateDownload() == DownloadMultipleChunk.DOWNLOAD_RESUME) {
                 btnDownload.setText("Pause");
             }
-            txtDownloadName.setText(downloadThread.getDownloadFileName());
+            txtDownloadName.setText(downloadThread.getFileName());
             downloadThread.setOnUpdateProgressListener(new UpdateProgressListener() {
                 @Override
                 public void updateProgress(final int progress, final long sizeDownloaded, final long speedDownload) {
-                    downloadThread.setPercent(progress);
+
                     pbDownload.setProgress(progress);
 
                     tvSpeedDownload.postDelayed(new Runnable() {
@@ -93,30 +94,42 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
                         @Override
                         public void run() {
                             tvPercent.setText(progress + "%");
-                            if (progress == 100) {
+                            if (downloadThread.getStateDownload() == DownloadMultipleChunk.DOWNLOAD_SUCCESS) {
                                 pbDownload.invalidate();
                                 //update database download complete;
-                                DownloadDatabaseHelper instance = DownloadDatabaseHelper.getInstance(pbDownload.getContext());
-                                DownloadDatabaseHelper.getInstance(pbDownload.getContext()).updateFileDownload(new FileDownload(downloadThread.getID(),
-                                        downloadThread.getDownloadFileName(), downloadThread.getUrlDownload(), downloadThread.getmState(), downloadThread.filePathDownload));
-                                Log.d("IDownload", "ID: " + downloadThread.getID());
-                                //add thread download to the list DownloadComplete and remove in listDownloadPending when download complete
-                                downloadManager.updateListDownloadComplete(instance.getFileItemDownload(downloadThread.getID()));
+//                                DownloadDatabaseHelper instance = DownloadDatabaseHelper.getInstance(pbDownload.getContext());
+//                                DownloadDatabaseHelper.getInstance(pbDownload.getContext()).updateFileDownload(new FileDownload(downloadThread.getID(),
+//                                        downloadThread.getDownloadFileName(), downloadThread.getUrlDownload(), downloadThread.getmState(), downloadThread.filePathDownload));
+//                                Log.d("IDownload", "ID: " + downloadThread.getID());
+//                                //add thread download to the list DownloadComplete and remove in listDownloadPending when download complete
+//                                downloadManager.updateListDownloadComplete(instance.getFileItemDownload(downloadThread.getID()));
                                 //notify adapter
+                                downloadList.remove(downloadThread);
                                 notifyItemRemoved(getAdapterPosition());
                             }
                         }
-                    }, 500);
+                    },500);
 
                     tvSizeFileDownload.postDelayed(new Runnable() {
                         @Override
                         public void run() {
                             tvSizeFileDownload.setText(DownloadUtil.getStringSizeLengthFile(sizeDownloaded) + "/" + DownloadUtil.getStringSizeLengthFile(downloadThread.getFileSize()));
                         }
-                    }, 500);
+                    },500);
 
                 }
             });
+
+            if(downloadThread.getStateDownload() == DownloadMultipleChunk.DOWNLOAD_SUCCESS){
+                tvPercent.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        downloadList.remove(downloadThread);
+                        notifyItemRemoved(getAdapterPosition());
+                    }
+                });
+            }
+
 
             btnDownload.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -124,10 +137,10 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
                     String text = btnDownload.getText().toString();
                     if (text.equals("Pause")) {
                         btnDownload.setText("Resume");
-                        downloadThread.onPause();
+                        downloadThread.pauseChunkDownload();
                     } else if (text.equals("Resume")) {
                         btnDownload.setText("Pause");
-                        downloadThread.onResume();
+                        downloadThread.resumeChunkDownload();
                     }
                 }
             });
@@ -135,13 +148,13 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
             btnCancel.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    downloadThread.onPause();
+                    downloadThread.pauseChunkDownload();
                     AlertDialog.Builder builder = new AlertDialog.Builder(pbDownload.getContext());
                     builder.setTitle("Do you want to stop downloading this file?");
                     builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            downloadManager.cancelDownload(downloadThread.getID(), btnCancel.getContext());
+                            downloadManager.cancelDownload(downloadThread.getId(), btnCancel.getContext());
                             notifyItemRemoved(getAdapterPosition());
                         }
                     });
@@ -149,7 +162,7 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.cancel();
-                            downloadThread.onResume();
+                            downloadThread.resumeChunkDownload();
                         }
                     });
                     builder.show();

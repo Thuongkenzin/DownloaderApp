@@ -35,6 +35,7 @@ public class FragmentCompleteDownload extends Fragment {
             }
         });
         listView.setAdapter(adapter);
+        listView.setDividerHeight(0);
         return view;
     }
 

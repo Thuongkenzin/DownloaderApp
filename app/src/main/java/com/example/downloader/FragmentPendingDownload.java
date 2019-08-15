@@ -11,7 +11,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
-import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.InputType;
@@ -35,6 +34,7 @@ public class FragmentPendingDownload extends Fragment {
     private RecyclerView mDownloadList;
     private FloatingActionButton mAddLink;
     private DownloadThreadAdapter downloadThreadAdapter;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -45,34 +45,37 @@ public class FragmentPendingDownload extends Fragment {
         mAddLink = view.findViewById(R.id.fab_add_link);
 
         mDownloadList = view.findViewById(R.id.rv_numbers);
-        RecyclerView.ItemDecoration itemDecoration = new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL);
-        mDownloadList.addItemDecoration(itemDecoration);
+       // RecyclerView.ItemDecoration itemDecoration = new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL);
+        //mDownloadList.addItemDecoration(itemDecoration);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         mDownloadList.setLayoutManager(layoutManager);
 
         downloadThreadAdapter = new DownloadThreadAdapter();
         mDownloadList.setAdapter(downloadThreadAdapter);
 
+
         mDownloadBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String url ="https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
-                String url2 = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-                String url3 = "http://speedtest.ftp.otenet.gr/files/test10Mb.db";
-                if(isConnectingToInternet()){
-//                    downloadManager.startUrlDownload(url);
-//                    downloadManager.startUrlDownload(url2);
-//                    downloadManager.startUrlDownload(url3);
-//                    downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_30mb.mp4");
-                    //downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_2mb.mp4");
-                    //downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4");
-                    downloadManager.addFileDownloadToData(getContext(),url);
-                    downloadManager.addFileDownloadToData(getContext(),url2);
-                    downloadManager.addFileDownloadToData(getContext(),url3);
-                    downloadThreadAdapter.notifyDataSetChanged();
-                } else {
-                    Toast.makeText(getContext(), "There is no internet connection", Toast.LENGTH_SHORT).show();
-                }
+//                String url ="https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
+//                String url2 = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+//                String url3 = "http://speedtest.ftp.otenet.gr/files/test10Mb.db";
+//                if(isConnectingToInternet()){
+////                    downloadManager.startUrlDownload(url);
+////                    downloadManager.startUrlDownload(url2);
+////                    downloadManager.startUrlDownload(url3);
+////                    downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_30mb.mp4");
+//                    //downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_2mb.mp4");
+//                    //downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4");
+//                    downloadManager.addFileDownloadToData(getContext(),url);
+//                    downloadManager.addFileDownloadToData(getContext(),url2);
+//                    downloadManager.addFileDownloadToData(getContext(),url3);
+//                    downloadThreadAdapter.notifyDataSetChanged();
+//                } else {
+//                    Toast.makeText(getContext(), "There is no internet connection", Toast.LENGTH_SHORT).show();
+//                }
+
+
             }
         });
 
@@ -80,12 +83,11 @@ public class FragmentPendingDownload extends Fragment {
         mViewBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-               //startActivity(new Intent(android.app.DownloadManager.ACTION_VIEW_DOWNLOADS));
+               startActivity(new Intent(android.app.DownloadManager.ACTION_VIEW_DOWNLOADS));
                 //openDownloadFolder();
-                DownloadMultipleChunk download = new DownloadMultipleChunk();
 
-                Thread thread = new Thread(download);
-                thread.start();
+
+
 
             }
         });
@@ -99,6 +101,7 @@ public class FragmentPendingDownload extends Fragment {
                 final EditText input = new EditText(getContext());
                 input.setInputType(InputType.TYPE_CLASS_TEXT);
                 input.setHint("Type or paste link");
+                input.setText("http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
                 builder.setView(input);
 
                 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -107,7 +110,8 @@ public class FragmentPendingDownload extends Fragment {
                         String url = input.getText().toString();
                         if(URLUtil.isValidUrl(url)) {
                             //them vao database
-                            downloadManager.addFileDownloadToData(getContext(),url);
+                            //downloadManager.addFileDownloadToData(getContext(),url);
+                            downloadManager.startUrlDownloadFile(url,getContext());
                             downloadThreadAdapter.notifyItemInserted(0);
                         }else{
                             Toast.makeText(getContext(), "Url is invalid, please try again!", Toast.LENGTH_SHORT).show();
