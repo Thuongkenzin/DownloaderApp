@@ -14,6 +14,7 @@ public final class DownloadContract {
         public final static String COLUMN_FILE_URL = "urlfile";
         public final static String COLUMN_FILE_DIR = "urldir";
         public final static String COLUMN_FILE_STATE = "state";
+        public final static String COLUMN_FILE_LENGTH = "filelength";
 
 
         public final static String COLUMN_CHUNK_ID = BaseColumns._ID;

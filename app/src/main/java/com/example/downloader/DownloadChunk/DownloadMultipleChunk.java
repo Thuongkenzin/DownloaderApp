@@ -23,7 +23,7 @@ import java.util.concurrent.Executors;
 
 public class DownloadMultipleChunk implements Runnable {
     private static final String TAG = DownloadMultipleChunk.class.getSimpleName();
-    int id;
+    long id;
     String fileName ;
     String pathFile ;
     //String urlDownload = "https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
@@ -69,7 +69,7 @@ public class DownloadMultipleChunk implements Runnable {
         return percent;
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
@@ -117,24 +117,41 @@ public class DownloadMultipleChunk implements Runnable {
         pathFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath()+"/"+fileName;
     }
 
+    public DownloadMultipleChunk(long id, String fileName, String pathFile, String urlDownload, int stateDownload, long fileSize) {
+        this.id = id;
+        this.fileName = fileName;
+        this.pathFile = pathFile;
+        this.urlDownload = urlDownload;
+        this.stateDownload = stateDownload;
+        this.fileSize = fileSize;
+        this.mHandler = new Handler();
+    }
+
     @Override
     public void run() {
+        //tao HandlerThread
         try {
 //            File fileDir = new File(pathFile);
 //            RandomAccessFile file = new RandomAccessFile(pathFile,"rw");
 //            FileChannel fileChannel = file.getChannel();
-            URL url = new URL(urlDownload);
-            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-            urlConnection.setRequestMethod("HEAD");
-            long length = urlConnection.getContentLength();
-            fileSize = length;
-            Log.v("TAG", "Length:" + length);
+            if(fileSize == 0) {
+                URL url = new URL(urlDownload);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setRequestMethod("HEAD");
+                long length = urlConnection.getContentLength();
+                fileSize = length;
+                Log.v("TAG", "Length:" + length);
 
-            if (urlConnection != null) {
-                urlConnection.disconnect();
+                if (urlConnection != null) {
+                    urlConnection.disconnect();
+                }
+                divideChunkToDownload(urlDownload,fileSize);
             }
-            //divideChunkToDownload(length,fileChannel);
             startDownloadMultipleChunk();
+//            for(DownloadChunk chunk: listChunkDownload){
+//                chunk.join();
+//            }
+            //goi join
 //
 //            mHandler.post(updateUi);
 //            while(!isComplete()){
@@ -152,16 +169,20 @@ public class DownloadMultipleChunk implements Runnable {
 //                Log.v(TAG,"State Success");
 //
 //            }
+            while(!isComplete()){
+
+            }
 
             //Log.v(TAG,"length file: " +fileDir.length());
         } catch (Exception e) {
             e.printStackTrace();
             Log.e(TAG, "Error when download: " + e.getMessage());
         }
+
     }
 
-    public void divideChunkToDownload(String urlDownload) {
-        long length = getLengthDownloadFile(urlDownload);
+    public void divideChunkToDownload(String urlDownload,long length) {
+       // long length = getLengthDownloadFile(urlDownload);
         DownloadChunk download_1 = new DownloadChunk(urlDownload,0,length/3,pathFile);
         listChunkDownload.add(download_1);
         DownloadChunk download_2 = new DownloadChunk(urlDownload,length/3+1,length/3*2,pathFile);
@@ -169,24 +190,6 @@ public class DownloadMultipleChunk implements Runnable {
         DownloadChunk download_3 = new DownloadChunk(urlDownload,length/3*2 +1,length,pathFile);
         listChunkDownload.add(download_3);
     }
-//    public long getLengthDownloadFile(final String urlDownload){
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                URL url = null;
-//                try {
-//                    url = new URL(urlDownload);
-//                    HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-//                    urlConnection.setRequestMethod("HEAD");
-//                    long length = urlConnection.getContentLength();
-//                    fileSize = length;
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-//
-//            }
-//        });
-//    }
 
     public void startDownloadMultipleChunk(){
         for(DownloadChunk chunk : listChunkDownload){
@@ -240,8 +243,10 @@ public class DownloadMultipleChunk implements Runnable {
             sumDownload = getDownloadedSizeFromChunkFile();
             percent = (int) (100 * sumDownload / fileSize);
             long speedDownload = (sumDownload - preSumDownload);
-            listener.updateProgress(percent, sumDownload, speedDownload);
-            preSumDownload = sumDownload;
+            if(listener!=null) {
+                listener.updateProgress(percent, sumDownload, speedDownload);
+                preSumDownload = sumDownload;
+            }
             if (!isComplete()) {
                 mHandler.postDelayed(this, 1000);
             }else{

@@ -24,13 +24,16 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
     private static final String TEXT_TYPE = " TEXT";
     private static final String COMMA_STEP= ",";
     private static final String SQL_CREATE_ENTRIES = "CREATE TABLE " + DownloadEntry.TABLE_NAME + " (" +
-            DownloadEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + DownloadEntry.COLUMN_FILE_NAME + TEXT_TYPE + COMMA_STEP
-            + DownloadEntry.COLUMN_FILE_URL + TEXT_TYPE + COMMA_STEP + DownloadEntry.COLUMN_FILE_DIR + TEXT_TYPE +
-            COMMA_STEP + DownloadEntry.COLUMN_FILE_STATE + " INTEGER" + " )";
+            DownloadEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + DownloadEntry.COLUMN_FILE_NAME + TEXT_TYPE + COMMA_STEP +
+            DownloadEntry.COLUMN_FILE_URL + TEXT_TYPE + COMMA_STEP + DownloadEntry.COLUMN_FILE_DIR + TEXT_TYPE + COMMA_STEP +
+            DownloadEntry.COLUMN_FILE_LENGTH + " INTEGER" + COMMA_STEP +
+            DownloadEntry.COLUMN_FILE_STATE + " INTEGER" + " )";
 
     private static final String SQL_CREATE_CHUNK_DOWNLOAD= "CREATE TABLE "+ DownloadEntry.TABLE_DOWNLOAD_CHUNK + " ("+
-            DownloadEntry.COLUMN_CHUNK_ID + " INTEGER PRIMARY KEY," + DownloadEntry.COLUMN_START_POSITION + " INTEGER" + COMMA_STEP +
-            DownloadEntry.COLUMN_END_POSITION + " INTEGER" + COMMA_STEP+ DownloadEntry.COLUMN_ID_FILE_DOWNLOAD_FK + " INTEGER REFERENCES "+ DownloadEntry.TABLE_NAME +" )";
+            DownloadEntry.COLUMN_CHUNK_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+            DownloadEntry.COLUMN_START_POSITION + " INTEGER" + COMMA_STEP +
+            DownloadEntry.COLUMN_END_POSITION + " INTEGER" + COMMA_STEP+
+            DownloadEntry.COLUMN_ID_FILE_DOWNLOAD_FK + " INTEGER REFERENCES "+ DownloadEntry.TABLE_NAME +" )";
 
     private static final String SQL_DELETE_ENTRIES = "DROP TABLE IF EXISTS " + DownloadEntry.TABLE_NAME;
     private static final String SQL_DELETE_TABLE_CHUNK_DOWNLOADS = "DROP TABLE IF EXISTS " + DownloadEntry.TABLE_DOWNLOAD_CHUNK;
@@ -66,20 +69,23 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
         values.put(DownloadEntry.COLUMN_FILE_DIR,file.getUriFileDir());
 
         db.insert(DownloadEntry.TABLE_NAME,null, values);
-        addChunkDownload(file);
 
 
     }
-    public void addChunkDownload(FileDownload fileDownload){
-        List<DownloadChunk> chunkList = fileDownload.getListChunks();
+    public void addChunkDownload(long id, List<DownloadChunk> list){
         SQLiteDatabase db = this.getWritableDatabase();
-        for(DownloadChunk chunk : chunkList){
+        for(DownloadChunk chunk : list){
             ContentValues values = new ContentValues();
             values.put(DownloadEntry.COLUMN_START_POSITION,chunk.getStart());
             values.put(DownloadEntry.COLUMN_END_POSITION,chunk.getEnd());
-            values.put(DownloadEntry.COLUMN_ID_FILE_DOWNLOAD_FK,fileDownload.get_id());
+            values.put(DownloadEntry.COLUMN_ID_FILE_DOWNLOAD_FK,id);
 
-            db.insertOrThrow(DownloadEntry.TABLE_DOWNLOAD_CHUNK,null,values);
+            int row = db.update(DownloadEntry.TABLE_DOWNLOAD_CHUNK,values,DownloadEntry.COLUMN_CHUNK_ID +"=?",
+                    new String[]{String.valueOf(chunk.getId())});
+            if(row !=1) {
+                long chunkId = db.insertOrThrow(DownloadEntry.TABLE_DOWNLOAD_CHUNK, null, values);
+                chunk.setId(chunkId);
+            }
         }
     }
 
@@ -114,7 +120,7 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
         return db.update(DownloadEntry.TABLE_NAME,values,DownloadEntry._ID + "=?" ,new String[]{String.valueOf(file.get_id())});
 
     }
-    public void deleteFileDownload(int id){
+    public void deleteFileDownload(long id){
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(DownloadEntry.TABLE_NAME,DownloadEntry._ID + "=?" ,new String[]{String.valueOf(id)});
     }
@@ -151,10 +157,11 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
             if (cursor.moveToFirst()) {
                 do {
                     FileDownload file = new FileDownload();
-                    file.set_id(Integer.parseInt(cursor.getString(cursor.getColumnIndex(DownloadEntry._ID))));
+                    file.set_id(Long.parseLong(cursor.getString(cursor.getColumnIndex(DownloadEntry._ID))));
                     file.setFileName(cursor.getString(cursor.getColumnIndex(DownloadEntry.COLUMN_FILE_NAME)));
                     file.setState(Integer.parseInt(cursor.getString(cursor.getColumnIndex(DownloadEntry.COLUMN_FILE_STATE))));
                     file.setUriFileDir(cursor.getString(cursor.getColumnIndex(DownloadEntry.COLUMN_FILE_DIR)));
+                    file.setFileLength(Long.parseLong(cursor.getString(cursor.getColumnIndex(DownloadEntry.COLUMN_FILE_LENGTH))));
                     file.setUrlDownload(cursor.getString(cursor.getColumnIndex(DownloadEntry.COLUMN_FILE_URL)));
                     fileLists.add(file);
 
@@ -173,22 +180,29 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
 
     public void deleteAllFileDownload(){
         SQLiteDatabase db = getWritableDatabase();
+        db.delete(DownloadEntry.TABLE_DOWNLOAD_CHUNK,null,null);
         db.delete(DownloadEntry.TABLE_NAME,null,null);
     }
 
-    public void addChunkDownloadFile(FileDownload file,DownloadChunk chunk){
+    public void addOrUpdateChunkDownloadFile(long idFile,DownloadChunk chunk){
         SQLiteDatabase db = getWritableDatabase();
 
         db.beginTransaction();
         try{
-            long fileId = addOrUpdateFileDownload(file);
             ContentValues values = new ContentValues();
-            values.put(DownloadEntry.COLUMN_ID_FILE_DOWNLOAD_FK,fileId);
+            values.put(DownloadEntry.COLUMN_ID_FILE_DOWNLOAD_FK,idFile);
             values.put(DownloadEntry.COLUMN_START_POSITION,chunk.getStart());
             values.put(DownloadEntry.COLUMN_END_POSITION,chunk.getEnd());
 
-            db.insertOrThrow(DownloadEntry.TABLE_DOWNLOAD_CHUNK,null,values);
-            db.setTransactionSuccessful();
+            if(chunk.getId()!=-1){
+                db.update(DownloadEntry.TABLE_DOWNLOAD_CHUNK,values,DownloadEntry.COLUMN_CHUNK_ID + "=?",
+                        new String[]{String.valueOf(chunk.getId())});
+                db.setTransactionSuccessful();
+            }else {
+                db.insertOrThrow(DownloadEntry.TABLE_DOWNLOAD_CHUNK, null, values);
+                db.setTransactionSuccessful();
+            }
+
 
         }catch (Exception e){
             Log.d(TAG, "Error while trying to add file chunk download to database");
@@ -208,6 +222,7 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
             values.put(DownloadEntry.COLUMN_FILE_NAME, file.getFileName());
             values.put(DownloadEntry.COLUMN_FILE_URL, file.getUrlDownload());
             values.put(DownloadEntry.COLUMN_FILE_STATE,file.getState());
+            values.put(DownloadEntry.COLUMN_FILE_LENGTH,file.getFileLength());
             values.put(DownloadEntry.COLUMN_FILE_DIR,file.getUriFileDir());
 
             //First try to update in case the file download already exists in the database
@@ -242,20 +257,28 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
         return fileId;
 
     }
-    public List<DownloadChunk> getAllChunkDownload(FileDownload fileDownload){
-        List<DownloadChunk> chunks = new ArrayList<>();
-        String CHUNKS_SELECT_QUERY = String.format("SELECT * FROM %s WhERE %s = ?",DownloadEntry.TABLE_DOWNLOAD_CHUNK,DownloadEntry.COLUMN_ID_FILE_DOWNLOAD_FK);
+    public List<FileChunk> getAllChunkDownload(long idFileDownload){
+        List<FileChunk> chunks = new ArrayList<>();
+        String CHUNKS_SELECT_QUERY = String.format("SELECT * FROM %s WhERE %s = ?",
+                DownloadEntry.TABLE_DOWNLOAD_CHUNK,
+                DownloadEntry.COLUMN_ID_FILE_DOWNLOAD_FK);
 
         SQLiteDatabase db = getReadableDatabase();
-        Cursor cursor = db.rawQuery(CHUNKS_SELECT_QUERY,new String[]{String.valueOf(fileDownload.get_id())});
+        Cursor cursor = db.rawQuery(CHUNKS_SELECT_QUERY,new String[]{String.valueOf(idFileDownload)});
         try{
             if(cursor.moveToFirst()){
                 do{
-                    DownloadChunk chunkDownload = new DownloadChunk();
-                    chunkDownload.setStart(Long.parseLong(cursor.getString(cursor.getColumnIndex(DownloadEntry.COLUMN_START_POSITION))));
-                    chunkDownload.setEnd(Long.parseLong(cursor.getString(cursor.getColumnIndex(DownloadEntry.COLUMN_END_POSITION))));
-                    chunkDownload.setIdDownload(Integer.parseInt(cursor.getString(cursor.getColumnIndex(DownloadEntry.COLUMN_CHUNK_ID))));
-                    chunks.add(chunkDownload);
+                    FileChunk fileChunk = new FileChunk();
+                    fileChunk.setStartPosition(Long.parseLong(cursor.getString(cursor.getColumnIndex(
+                            DownloadEntry.COLUMN_START_POSITION))));
+                    fileChunk.setEndPosition(Long.parseLong(cursor.getString(cursor.getColumnIndex(
+                            DownloadEntry.COLUMN_END_POSITION))));
+                    fileChunk.setId(Long.parseLong(cursor.getString(cursor.getColumnIndex(
+                            DownloadEntry.COLUMN_CHUNK_ID))));
+                    fileChunk.setIdFileDownload(Long.parseLong(cursor.getString(cursor.getColumnIndex(
+                            DownloadEntry.COLUMN_ID_FILE_DOWNLOAD_FK))));
+                    chunks.add(fileChunk);
+
                 }while(cursor.moveToNext());
             }
         }catch(Exception e){

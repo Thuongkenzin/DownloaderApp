@@ -57,23 +57,21 @@ public class FragmentPendingDownload extends Fragment {
         mDownloadBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                String url ="https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
-//                String url2 = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-//                String url3 = "http://speedtest.ftp.otenet.gr/files/test10Mb.db";
-//                if(isConnectingToInternet()){
-////                    downloadManager.startUrlDownload(url);
-////                    downloadManager.startUrlDownload(url2);
-////                    downloadManager.startUrlDownload(url3);
-////                    downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_30mb.mp4");
-//                    //downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_2mb.mp4");
-//                    //downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4");
-//                    downloadManager.addFileDownloadToData(getContext(),url);
-//                    downloadManager.addFileDownloadToData(getContext(),url2);
-//                    downloadManager.addFileDownloadToData(getContext(),url3);
-//                    downloadThreadAdapter.notifyDataSetChanged();
-//                } else {
-//                    Toast.makeText(getContext(), "There is no internet connection", Toast.LENGTH_SHORT).show();
-//                }
+                String url ="https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
+                String url2 = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+                String url3 = "http://speedtest.ftp.otenet.gr/files/test10Mb.db";
+                if(isConnectingToInternet()){
+                    downloadManager.startUrlDownload(url);
+                    downloadManager.startUrlDownload(url2);
+                    downloadManager.startUrlDownload(url3);
+                    downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_30mb.mp4");
+                    downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_2mb.mp4");
+                    //downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4");
+
+                    downloadThreadAdapter.notifyDataSetChanged();
+                } else {
+                    Toast.makeText(getContext(), "There is no internet connection", Toast.LENGTH_SHORT).show();
+                }
 
 
             }
@@ -111,7 +109,7 @@ public class FragmentPendingDownload extends Fragment {
                         if(URLUtil.isValidUrl(url)) {
                             //them vao database
                             //downloadManager.addFileDownloadToData(getContext(),url);
-                            downloadManager.startUrlDownloadFile(url,getContext());
+                            downloadManager.startUrlDownload(url);
                             downloadThreadAdapter.notifyItemInserted(0);
                         }else{
                             Toast.makeText(getContext(), "Url is invalid, please try again!", Toast.LENGTH_SHORT).show();

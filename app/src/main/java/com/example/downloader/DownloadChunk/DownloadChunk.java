@@ -22,29 +22,64 @@ public class DownloadChunk extends Thread {
     long totalDownload;
     String pathFile;
     public int state;
-    private int idDownload;
+    private long id;
+    private long idFileDownload;
+
     public DownloadChunk(String urlDownload, long start, long end,String pathFile) {
         this.urlDownload = urlDownload;
         this.start = start;
         this.end = end;
         this.pathFile = pathFile;
-        this.fileChannel = fileChannel;
-
+        this.id =-1;
         this.pauseChunkDownload = false;
         lockObject = new Object();
     }
+    public DownloadChunk(long id, long idFileDownload,long start, long end){
+        this.id = id;
+        this.idFileDownload = idFileDownload;
+        this.start = start;
+        this.end = end;
+        this.pauseChunkDownload = true;
+        lockObject = new Object();
+    }
+
+    @Override
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public long getIdFileDownload() {
+        return idFileDownload;
+    }
+
+    public void setIdFileDownload(long idFileDownload) {
+        this.idFileDownload = idFileDownload;
+    }
 
     public DownloadChunk(){}
+
     public long getTotalDownload() {
         return totalDownload;
     }
 
-    public int getIdDownload() {
-        return idDownload;
+    public String getUrlDownload() {
+        return urlDownload;
     }
 
-    public void setIdDownload(int idDownload) {
-        this.idDownload = idDownload;
+    public void setUrlDownload(String urlDownload) {
+        this.urlDownload = urlDownload;
+    }
+
+    public String getPathFile() {
+        return pathFile;
+    }
+
+    public void setPathFile(String pathFile) {
+        this.pathFile = pathFile;
     }
 
     public void setTotalDownload(long totalDownload) {
@@ -101,6 +136,7 @@ public class DownloadChunk extends Thread {
                     }
                 }
                 fileChannel.write(byteBuffer,position);
+                start += count;
                 position = position + count;
                 if(state == DownloadMultipleChunk.DOWNLOAD_CANCEL){
                     break;

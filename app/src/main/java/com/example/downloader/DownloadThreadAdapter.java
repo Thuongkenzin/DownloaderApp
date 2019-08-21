@@ -96,14 +96,6 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
                             tvPercent.setText(progress + "%");
                             if (downloadThread.getStateDownload() == DownloadMultipleChunk.DOWNLOAD_SUCCESS) {
                                 pbDownload.invalidate();
-                                //update database download complete;
-//                                DownloadDatabaseHelper instance = DownloadDatabaseHelper.getInstance(pbDownload.getContext());
-//                                DownloadDatabaseHelper.getInstance(pbDownload.getContext()).updateFileDownload(new FileDownload(downloadThread.getID(),
-//                                        downloadThread.getDownloadFileName(), downloadThread.getUrlDownload(), downloadThread.getmState(), downloadThread.filePathDownload));
-//                                Log.d("IDownload", "ID: " + downloadThread.getID());
-//                                //add thread download to the list DownloadComplete and remove in listDownloadPending when download complete
-//                                downloadManager.updateListDownloadComplete(instance.getFileItemDownload(downloadThread.getID()));
-                                //notify adapter
                                 downloadList.remove(downloadThread);
                                 notifyItemRemoved(getAdapterPosition());
                             }
@@ -154,7 +146,7 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
                     builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            downloadManager.cancelDownload(downloadThread.getId(), btnCancel.getContext());
+                            downloadManager.cancelDownload(downloadThread);
                             notifyItemRemoved(getAdapterPosition());
                         }
                     });

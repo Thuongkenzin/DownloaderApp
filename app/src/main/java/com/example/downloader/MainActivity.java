@@ -74,7 +74,8 @@ public class MainActivity extends AppCompatActivity {
         actionBar.setDisplayHomeAsUpEnabled(true);
        // actionBar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
 
-        //displayDatabaseInfo();
+        downloadManager.getFileDownloadFromDatabase(this);
+        downloadManager.startAllDownload();
         createViewPagerLayout();
 
         mDrawerLayout = findViewById(R.id.drawer_layout);
@@ -174,18 +175,16 @@ public class MainActivity extends AppCompatActivity {
             return false;
     }
 
-    @Override
-    protected void onDestroy() {
-        //downloadManager.getPool().shutdown();
-        DownloadDatabaseHelper.getInstance(getApplicationContext()).close();
-        super.onDestroy();
-    }
-    private void displayDatabaseInfo(){
-        DownloadDatabaseHelper databaseInstance = DownloadDatabaseHelper.getInstance(this);
 
-        SQLiteDatabase db = databaseInstance.getReadableDatabase();
-        downloadManager.getListDownloadFromDatabase(this);
-        downloadManager.startAllDownload();
+    @Override
+    protected void onStop() {
+        super.onStop();
+        downloadManager.saveDownloadFileToDatabaseBeforeExit(this);
+
+    }
+
+    private void displayDatabaseInfo(){
+        downloadManager.getFileDownloadFromDatabase(this);
 
     }
 }

@@ -8,20 +8,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FileDownload {
-    public int _id;
+    public long _id;
     public String fileName;
     public String urlDownload;
     public int state;
+    public long fileLength;
     public String uriFileDir;
     private List<DownloadChunk> listChunks;
 
-    public FileDownload(String urlDownload,int state){
+    public FileDownload(String urlDownload,String uriFileDir,long fileLength,int state){
         this.urlDownload = urlDownload;
         this.state = state;
+        this.uriFileDir = uriFileDir;
+        this.fileLength = fileLength;
         this.fileName = urlDownload.substring(urlDownload.lastIndexOf('/')+1);
         this.listChunks = new ArrayList<>();
 
     }
+
+    public long getFileLength() {
+        return fileLength;
+    }
+
+    public void setFileLength(long fileLength) {
+        this.fileLength = fileLength;
+    }
+
     public FileDownload(){
 
     }
@@ -42,11 +54,11 @@ public class FileDownload {
         this.listChunks = listChunks;
     }
 
-    public int get_id() {
+    public long get_id() {
         return _id;
     }
 
-    public void set_id(int _id) {
+    public void set_id(long _id) {
         this._id = _id;
     }
 
