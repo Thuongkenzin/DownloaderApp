@@ -1,18 +1,16 @@
-package com.example.downloader;
+package com.example.downloader.DownloadAsyncTask;
 
 import android.os.Environment;
-import android.os.Handler;
 import android.util.Log;
 
 import com.example.downloader.Database.DownloadContract;
+import com.example.downloader.Listener.UpdateProgressListener;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class DownloadThread implements Runnable {
     private static final String TAG = "DownloadThread";

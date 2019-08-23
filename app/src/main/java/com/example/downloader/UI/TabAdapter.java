@@ -1,4 +1,4 @@
-package com.example.downloader;
+package com.example.downloader.UI;
 
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;

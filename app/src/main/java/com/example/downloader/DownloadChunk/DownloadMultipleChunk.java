@@ -2,22 +2,16 @@ package com.example.downloader.DownloadChunk;
 
 import android.os.Environment;
 import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
-import com.example.downloader.Database.DownloadDatabaseHelper;
-import com.example.downloader.UpdateProgressListener;
+import com.example.downloader.Database.DownloadContract;
+import com.example.downloader.Listener.UpdateProgressListener;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -26,21 +20,35 @@ public class DownloadMultipleChunk implements Runnable {
     long id;
     String fileName ;
     String pathFile ;
-    //String urlDownload = "https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
+
     String urlDownload ;
     private List<DownloadChunk> listChunkDownload = new ArrayList<>();
-    ExecutorService poolChunkDownload = Executors.newFixedThreadPool(3);
     public static final int DOWNLOAD_PAUSE = 0;
-    public static final int DOWNLOAD_RESUME = 1;
     public static final int DOWNLOAD_SUCCESS = 2;
     public static final int DOWNLOAD_CANCEL = 3;
+
+    public static final int MODE_NEW_DOWNLOAD = 4;
+    public static final int MODE_RESTART = 5;
+    public static final int MODE_RESUME = 6;
+
+    public static int getMode() {
+        return mMode;
+    }
+
+    public static void setMode(int mMode) {
+        DownloadMultipleChunk.mMode = mMode;
+    }
+
+    private static int mMode;
     private int stateDownload;
     private int percent = 0;
+
     private long fileSize ;
     private UpdateProgressListener listener;
     private Handler mHandler;
     long sumDownload;
     long preSumDownload =0;
+    long totalDownloaded ;
     public void setOnUpdateProgressListener(UpdateProgressListener listener) {
         this.listener = listener;
     }
@@ -112,9 +120,10 @@ public class DownloadMultipleChunk implements Runnable {
     public DownloadMultipleChunk(String urlDownload) {
         this.urlDownload = urlDownload;
         mHandler = new Handler();
-        stateDownload = DOWNLOAD_RESUME;
+        stateDownload = MODE_RESUME;
         this.fileName =  urlDownload.substring(urlDownload.lastIndexOf('/') + 1);
         pathFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath()+"/"+fileName;
+
     }
 
     public DownloadMultipleChunk(long id, String fileName, String pathFile, String urlDownload, int stateDownload, long fileSize) {
@@ -125,6 +134,7 @@ public class DownloadMultipleChunk implements Runnable {
         this.stateDownload = stateDownload;
         this.fileSize = fileSize;
         this.mHandler = new Handler();
+
     }
 
     @Override
@@ -134,6 +144,7 @@ public class DownloadMultipleChunk implements Runnable {
 //            File fileDir = new File(pathFile);
 //            RandomAccessFile file = new RandomAccessFile(pathFile,"rw");
 //            FileChannel fileChannel = file.getChannel();
+            stateDownload = MODE_RESUME;
             if(fileSize == 0) {
                 URL url = new URL(urlDownload);
                 HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
@@ -147,32 +158,18 @@ public class DownloadMultipleChunk implements Runnable {
                 }
                 divideChunkToDownload(urlDownload,fileSize);
             }
+
             startDownloadMultipleChunk();
-//            for(DownloadChunk chunk: listChunkDownload){
-//                chunk.join();
-//            }
-            //goi join
-//
-//            mHandler.post(updateUi);
-//            while(!isComplete()){
-//                mHandler.
-//                sumDownload=getDownloadedSizeFromChunkFile();
-//                percent = (int)(100*sumDownload/fileSize);
-//                long speedDownload = (sumDownload-preSumDownload) *1000/800;
-//                listener.updateProgress(percent,sumDownload,speedDownload);
-//                preSumDownload= sumDownload;
-//                Thread.sleep(800);
-//            }
 
-//            if(isComplete()){
-//                stateDownload = DOWNLOAD_SUCCESS;
-//                Log.v(TAG,"State Success");
-//
-//            }
             while(!isComplete()){
-
+                if(stateDownload == DOWNLOAD_PAUSE || stateDownload == DOWNLOAD_CANCEL){
+                    return;
+                }
             }
 
+            if(isComplete()) {
+                stateDownload = DownloadContract.DownloadEntry.STATE_COMPLETE;
+            }
             //Log.v(TAG,"length file: " +fileDir.length());
         } catch (Exception e) {
             e.printStackTrace();
@@ -182,7 +179,6 @@ public class DownloadMultipleChunk implements Runnable {
     }
 
     public void divideChunkToDownload(String urlDownload,long length) {
-       // long length = getLengthDownloadFile(urlDownload);
         DownloadChunk download_1 = new DownloadChunk(urlDownload,0,length/3,pathFile);
         listChunkDownload.add(download_1);
         DownloadChunk download_2 = new DownloadChunk(urlDownload,length/3+1,length/3*2,pathFile);
@@ -191,12 +187,15 @@ public class DownloadMultipleChunk implements Runnable {
         listChunkDownload.add(download_3);
     }
 
+    public void restartDownloadAgain(){
+
+    }
+
     public void startDownloadMultipleChunk(){
         for(DownloadChunk chunk : listChunkDownload){
-            poolChunkDownload.execute(chunk);
+            chunk.startChunkDownload(MODE_RESUME);
         }
         mHandler.post(updateUi);
-        poolChunkDownload.shutdown();
     }
 
     public boolean isComplete(){
@@ -208,13 +207,17 @@ public class DownloadMultipleChunk implements Runnable {
         return true;
     }
     public void pauseChunkDownload(){
+        stateDownload = DOWNLOAD_PAUSE;
         for (DownloadChunk chunk: listChunkDownload){
-            chunk.onPause();
+            //chunk.onPause();
+            chunk.pauseChunkDownload();
         }
     }
     public void resumeChunkDownload(){
+        stateDownload = MODE_RESUME;
         for (DownloadChunk chunk: listChunkDownload){
-            chunk.onResume();
+            //chunk.onResume();
+            chunk.startChunkDownload(MODE_RESUME);
         }
     }
 
@@ -225,9 +228,21 @@ public class DownloadMultipleChunk implements Runnable {
         deleteFileInSDCard();
     }
 
+    public long getTotalDownloadPrev(){
+        long total =0;
+        if(listChunkDownload.size()!= 0){
+            for(DownloadChunk chunk: listChunkDownload){
+                total += (chunk.getEnd() -chunk.getStart());
+            }
+            return fileSize - total;
+        }
+        return 0;
+    }
     public void deleteFileInSDCard(){
         File file = new File(pathFile);
-        file.delete();
+        if(file.exists()) {
+            file.delete();
+        }
     }
 
     public long getDownloadedSizeFromChunkFile(){
@@ -237,6 +252,7 @@ public class DownloadMultipleChunk implements Runnable {
         }
         return totalDownload;
     }
+
     private Runnable updateUi =new Runnable() {
         @Override
         public void run() {

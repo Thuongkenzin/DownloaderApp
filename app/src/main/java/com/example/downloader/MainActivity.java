@@ -1,12 +1,8 @@
 package com.example.downloader;
 
-import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -32,7 +28,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import com.example.downloader.Database.DownloadDatabaseHelper;
+import com.example.downloader.UI.FragmentCompleteDownload;
+import com.example.downloader.UI.FragmentPendingDownload;
+import com.example.downloader.UI.TabAdapter;
 
 import java.io.File;
 

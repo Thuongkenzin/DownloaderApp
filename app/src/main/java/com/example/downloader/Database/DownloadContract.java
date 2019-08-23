@@ -19,8 +19,9 @@ public final class DownloadContract {
 
         public final static String COLUMN_CHUNK_ID = BaseColumns._ID;
         public final static String COLUMN_START_POSITION = "start";
-        public final static String COLUMN_END_POSITION = "position";
+        public final static String COLUMN_END_POSITION = "end";
         public final static String COLUMN_ID_FILE_DOWNLOAD_FK = "idFileDownload";
+        public final static String COLUMN_TOTAL_DOWNLOADED_CHUNK = "totalDownloaded";
         public static final int STATE_COMPLETE = 0;
         public static final int STATE_UNCOMPLETE = 1;
     }

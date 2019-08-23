@@ -50,10 +50,10 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
             super(itemView);
             txtDownloadName = itemView.findViewById(R.id.tv_item_number);
             pbDownload = itemView.findViewById(R.id.pb_item_number);
-            btnDownload = itemView.findViewById(R.id.btn_download);
-            tvPercent = itemView.findViewById(R.id.tv_percent);
-            tvSizeFileDownload = itemView.findViewById(R.id.tv_size_file);
-            btnCancel = itemView.findViewById(R.id.btn_cancel);
+//            btnDownload = itemView.findViewById(R.id.btn_download);
+//            tvPercent = itemView.findViewById(R.id.tv_percent);
+//            tvSizeFileDownload = itemView.findViewById(R.id.tv_size_file);
+//            btnCancel = itemView.findViewById(R.id.btn_cancel);
         }
         void bind(final DownloadTask downloadTask){
             txtDownloadName.setText(downloadTask.downloadFileName);

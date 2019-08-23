@@ -4,6 +4,7 @@ import android.util.Log;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
@@ -11,7 +12,7 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-public class DownloadChunk extends Thread {
+public class DownloadChunk implements Runnable {
     private final static String TAG = DownloadChunk.class.getSimpleName();
     String urlDownload;
     private long start;
@@ -19,11 +20,20 @@ public class DownloadChunk extends Thread {
     FileChannel fileChannel;
     boolean pauseChunkDownload;
     Object lockObject;
-    long totalDownload;
+    long totalDownload = 0;
     String pathFile;
     public int state;
     private long id;
     private long idFileDownload;
+    private Thread mThread;
+
+    private int mMode;
+
+    public void startChunkDownload(int mode) {
+        mMode = mode;
+        mThread = new Thread(this);
+        mThread.start();
+    }
 
     public DownloadChunk(String urlDownload, long start, long end,String pathFile) {
         this.urlDownload = urlDownload;
@@ -43,7 +53,6 @@ public class DownloadChunk extends Thread {
         lockObject = new Object();
     }
 
-    @Override
     public long getId() {
         return id;
     }
@@ -104,8 +113,30 @@ public class DownloadChunk extends Thread {
 
     @Override
     public void run() {
+        switch (mMode) {
+            case DownloadMultipleChunk.MODE_NEW_DOWNLOAD:
+                break;
+            case DownloadMultipleChunk.MODE_RESTART:
+                totalDownload = 0;
+                break;
+            case DownloadMultipleChunk.MODE_RESUME:
+                state = DownloadMultipleChunk.MODE_RESUME;
+                break;
+            default:
+                break;
+        }
+        runDownload();
+    }
+
+    private void runDownload() {
+
+//        if (totalDownload > end - 1) {
+//            state = DownloadMultipleChunk.DOWNLOAD_SUCCESS;
+//            return;
+//        }
+
         try {
-            RandomAccessFile file = new RandomAccessFile(pathFile,"rw");
+            RandomAccessFile file = new RandomAccessFile(pathFile, "rw");
             fileChannel = file.getChannel();
             URL url = new URL(urlDownload);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -115,7 +146,6 @@ public class DownloadChunk extends Thread {
             connection.setDoInput(true);
             connection.setDoOutput(false);
             connection.connect();
-            state = DownloadMultipleChunk.DOWNLOAD_RESUME;
             long fileSize = connection.getContentLength();
             Log.v(TAG, "length1:" + fileSize);
 
@@ -124,43 +154,70 @@ public class DownloadChunk extends Thread {
             byte[] buffer = new byte[4000];
             int count = 0;
             long position = start;
-            totalDownload =0;
-            while((count = in.read(buffer))!=-1){
-                //fos.write(buffer,0,count);
+
+
+            while ((count = in.read(buffer)) != -1) {
                 totalDownload += count;
-                ByteBuffer byteBuffer = ByteBuffer.wrap(buffer,0,count);
+                ByteBuffer byteBuffer = ByteBuffer.wrap(buffer, 0, count);
                 byteBuffer.rewind();
-                synchronized (lockObject){
-                    while(pauseChunkDownload){
-                        lockObject.wait();
-                    }
-                }
-                fileChannel.write(byteBuffer,position);
+//                synchronized (lockObject) {
+//                    while (pauseChunkDownload) {
+//                        lockObject.wait();
+//                    }
+//                }
+                fileChannel.write(byteBuffer, position);
                 start += count;
                 position = position + count;
-                if(state == DownloadMultipleChunk.DOWNLOAD_CANCEL){
-                    break;
+                Log.v(TAG,"total count:" + totalDownload);
+
+                if (isPausedOrCancelled()) {
+                    release(connection);
+                    return;
                 }
             }
-            Log.v(TAG,"file Lenght:"+ fileChannel.size());
+
+            Log.v(TAG, "file Lenght:" + fileChannel.size());
+
             state = DownloadMultipleChunk.DOWNLOAD_SUCCESS;
+
             connection.disconnect();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    public void onPause(){
-        synchronized (lockObject) {
-            pauseChunkDownload = true;
-            Log.v(TAG,"Pause");
+
+    private boolean isPausedOrCancelled() {
+        if(state == DownloadMultipleChunk.DOWNLOAD_CANCEL || state == DownloadMultipleChunk.DOWNLOAD_PAUSE){
+            return  true;
+        }
+        return false;
+
+    }
+
+    private void release(HttpURLConnection connection) {
+        try {
+            connection.disconnect();
+        } catch (Exception ignored) {
         }
     }
-    public void onResume(){
-        synchronized (lockObject){
+
+    public void onPause() {
+        synchronized (lockObject) {
+            pauseChunkDownload = true;
+            Log.v(TAG, "Pause");
+        }
+    }
+
+    public void onResume() {
+        synchronized (lockObject) {
             pauseChunkDownload = false;
-            Log.v(TAG,"Resume");
+            Log.v(TAG, "Resume");
             lockObject.notifyAll();
         }
+    }
+
+    public void pauseChunkDownload(){
+        state = DownloadMultipleChunk.DOWNLOAD_PAUSE;
     }
     public void cancelDownload(){
         state = DownloadMultipleChunk.DOWNLOAD_CANCEL;

@@ -1,4 +1,4 @@
-package com.example.downloader;
+package com.example.downloader.Adapter;
 
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
@@ -19,6 +19,9 @@ import android.widget.Toast;
 
 import com.example.downloader.Database.DownloadDatabaseHelper;
 import com.example.downloader.Database.FileDownload;
+import com.example.downloader.DownloadManager;
+import com.example.downloader.DownloadUtil;
+import com.example.downloader.R;
 
 import java.io.File;
 import java.util.List;
@@ -54,16 +57,16 @@ public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
 
         //get file have been saved in SD
         final File file = new File(downloadThread.getUriFileDir());
-        long size = file.length();
 
         viewHolder.textName.setText(downloadThread.getFileName());
-        viewHolder.textSize.setText(DownloadUtil.getStringSizeLengthFile(size));
+        viewHolder.textSize.setText(DownloadUtil.getStringSizeLengthFile(downloadThread.getFileLength()));
         viewHolder.btnOption.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //showFilterPopup(v);
                 PopupMenu popup = new PopupMenu(getContext(), v);
                 popup.inflate(R.menu.download_complete_item);
+                final DownloadManager downloadManager = DownloadManager.getInstance();
                 popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
@@ -78,8 +81,9 @@ public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
                                         intent.setDataAndType(Uri.fromFile(file), mime);
                                         getContext().startActivity(intent);
                                     } else {
-                                        DownloadDatabaseHelper.getInstance(getContext()).deleteFileDownload(downloadThread.get_id());
-                                        DownloadManager.getInstance().getCompleteListDownload().remove(downloadThread);
+                                        //DownloadDatabaseHelper.getInstance(getContext()).deleteFileDownload(downloadThread.get_id());
+                                        downloadManager.deleteFileFromDatabase(getContext(),downloadThread.get_id());
+                                        downloadManager.getCompleteListDownload().remove(downloadThread);
                                         notifyDataSetChanged();
                                         Toast.makeText(getContext(), "Cannot find this file!", Toast.LENGTH_SHORT).show();
                                     }
@@ -97,8 +101,9 @@ public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
                                         if (file != null) {
                                             file.delete();
                                         }
-                                        DownloadDatabaseHelper.getInstance(getContext()).deleteFileDownload(downloadThread.get_id());
-                                        DownloadManager.getInstance().getCompleteListDownload().remove(downloadThread);
+                                        //DownloadDatabaseHelper.getInstance(getContext()).deleteFileDownload(downloadThread.get_id());
+                                        downloadManager.deleteFileFromDatabase(getContext(),downloadThread.get_id());
+                                        downloadManager.getCompleteListDownload().remove(downloadThread);
                                         notifyDataSetChanged();
                                     }
                                 });

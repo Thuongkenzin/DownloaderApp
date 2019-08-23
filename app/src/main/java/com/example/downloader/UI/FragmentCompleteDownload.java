@@ -1,4 +1,4 @@
-package com.example.downloader;
+package com.example.downloader.UI;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -11,7 +11,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
 
+import com.example.downloader.Adapter.DownloadCompleteAdapter;
 import com.example.downloader.Database.FileDownload;
+import com.example.downloader.DownloadManager;
+import com.example.downloader.R;
 
 import java.util.List;
 
@@ -30,7 +33,7 @@ public class FragmentCompleteDownload extends Fragment {
         final DownloadCompleteAdapter adapter = new DownloadCompleteAdapter(getContext(),listFileDownloaded);
         DownloadManager.getInstance().setOnUpdateListDownloadListener(new DownloadManager.UpdateListDownloadListener() {
             @Override
-            public void updateList(FileDownload fileDownload) {
+            public void updateList() {
                adapter.notifyDataSetChanged();
             }
         });

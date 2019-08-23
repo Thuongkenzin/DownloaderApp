@@ -1,4 +1,4 @@
-package com.example.downloader;
+package com.example.downloader.UI;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -22,17 +22,17 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.example.downloader.Database.DownloadContract;
-import com.example.downloader.Database.DownloadDatabaseHelper;
-import com.example.downloader.Database.FileDownload;
+import com.example.downloader.Adapter.DownloadThreadAdapter;
+import com.example.downloader.DownloadService;
+import com.example.downloader.R;
 
 
 public class FragmentPendingDownload extends Fragment {
     Button mDownloadBtn;
     Button mViewBtn;
     final com.example.downloader.DownloadManager downloadManager = com.example.downloader.DownloadManager.getInstance();
-    private RecyclerView mDownloadList;
-    private FloatingActionButton mAddLink;
+    private RecyclerView mRecyclerView;
+    private FloatingActionButton mAddLinkButton;
     private DownloadThreadAdapter downloadThreadAdapter;
 
     @Nullable
@@ -42,17 +42,14 @@ public class FragmentPendingDownload extends Fragment {
 
         mDownloadBtn = view.findViewById(R.id.downloadURL);
         mViewBtn = view.findViewById(R.id.view_download);
-        mAddLink = view.findViewById(R.id.fab_add_link);
+        mAddLinkButton = view.findViewById(R.id.fab_add_link);
 
-        mDownloadList = view.findViewById(R.id.rv_numbers);
-       // RecyclerView.ItemDecoration itemDecoration = new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL);
-        //mDownloadList.addItemDecoration(itemDecoration);
+        mRecyclerView = view.findViewById(R.id.rv_numbers);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
-        mDownloadList.setLayoutManager(layoutManager);
+        mRecyclerView.setLayoutManager(layoutManager);
 
         downloadThreadAdapter = new DownloadThreadAdapter();
-        mDownloadList.setAdapter(downloadThreadAdapter);
-
+        mRecyclerView.setAdapter(downloadThreadAdapter);
 
         mDownloadBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -84,12 +81,9 @@ public class FragmentPendingDownload extends Fragment {
                startActivity(new Intent(android.app.DownloadManager.ACTION_VIEW_DOWNLOADS));
                 //openDownloadFolder();
 
-
-
-
             }
         });
-        mAddLink.setOnClickListener(new View.OnClickListener() {
+        mAddLinkButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //init a dialog to get link
@@ -109,7 +103,11 @@ public class FragmentPendingDownload extends Fragment {
                         if(URLUtil.isValidUrl(url)) {
                             //them vao database
                             //downloadManager.addFileDownloadToData(getContext(),url);
-                            downloadManager.startUrlDownload(url);
+                            Intent intentDownload = new Intent(getContext(),DownloadService.class)
+                            .setAction(DownloadService.ACTION_SEND_URL_DOWNLOAD);
+                            intentDownload.putExtra(DownloadService.URL_FILE_DOWNLOAD,url);
+                            getContext().startService(intentDownload);
+                            //downloadManager.startUrlDownload(url);
                             downloadThreadAdapter.notifyItemInserted(0);
                         }else{
                             Toast.makeText(getContext(), "Url is invalid, please try again!", Toast.LENGTH_SHORT).show();

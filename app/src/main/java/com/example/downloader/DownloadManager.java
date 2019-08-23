@@ -15,11 +15,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class DownloadManager {
     private static int THREAD_POOL_SIZES = 3;
     private static DownloadManager instance;
-    private List<DownloadThread> listDownload;
     private List<FileDownload> completeListDownload;
     private UpdateListDownloadListener listenerUpdate;
 
@@ -31,13 +33,15 @@ public class DownloadManager {
     }
 
     private ExecutorService pool = Executors.newFixedThreadPool(THREAD_POOL_SIZES);
+    private ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(3,3,60, TimeUnit.SECONDS,
+            new LinkedBlockingDeque<Runnable>());
 
     public void setOnUpdateListDownloadListener(UpdateListDownloadListener listener) {
         this.listenerUpdate = listener;
     }
 
     public interface UpdateListDownloadListener {
-        void updateList(FileDownload fileDownload);
+        void updateList();
     }
 
     public List<FileDownload> getCompleteListDownload() {
@@ -66,17 +70,26 @@ public class DownloadManager {
     public void startAllDownload() {
         if(listDownloadFile.size() !=0) {
             for (DownloadMultipleChunk thread : listDownloadFile) {
-                pool.submit(thread);
+                //pool.submit(thread);
+                threadPoolExecutor.execute(thread);
                 thread.pauseChunkDownload();
             }
         }
     }
 
+    public void addFileDownloadDoneToListComplete(DownloadMultipleChunk chunk){
+        FileDownload fileDownload = new FileDownload(chunk.getId(),chunk.getFileName(),chunk.getUrlDownload(),
+                chunk.getStateDownload(),chunk.getPathFile(),chunk.getFileSize());
+        completeListDownload.add(fileDownload);
+        listDownloadFile.remove(chunk);
+        listenerUpdate.updateList();
+    }
+
     public void startUrlDownload(String url) {
         DownloadMultipleChunk downloadTask = new DownloadMultipleChunk(url);
         listDownloadFile.add(0,downloadTask);
-        pool.submit(downloadTask);
-
+        //pool.submit(downloadTask);
+        threadPoolExecutor.execute(downloadTask);
     }
 
 
@@ -91,7 +104,10 @@ public class DownloadManager {
         }
     }
 
-
+    public void deleteFileFromDatabase(Context context, long idFileDelete){
+        DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
+        databaseHelper.deleteFileDownload(idFileDelete);
+    }
 
     public void saveDownloadFileToDatabaseBeforeExit(Context context){
         DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
@@ -112,6 +128,7 @@ public class DownloadManager {
     public void getFileDownloadFromDatabase(Context context){
         DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
         List<FileDownload> fileDownloadList =databaseHelper.getAllFileDownload();
+
         for(FileDownload fileDownload: fileDownloadList){
             //check file have downloaded done
             if(fileDownload.getState() == DownloadEntry.STATE_UNCOMPLETE){
@@ -132,7 +149,7 @@ public class DownloadManager {
         List<DownloadChunk> downloadChunkList = new ArrayList<>();
         for(FileChunk chunk: fileChunkList){
             //if file chunk is not done, add to the list to continue downloading.
-            if(chunk.getStartPosition() != chunk.getEndPosition()){
+            if(chunk.getStartPosition() < chunk.getEndPosition()){
                 DownloadChunk downloadChunk = new DownloadChunk(chunk.getId(),chunk.getIdFileDownload(),
                         chunk.getStartPosition(),chunk.getEndPosition());
                 downloadChunk.setUrlDownload(downloadTask.getUrlDownload());

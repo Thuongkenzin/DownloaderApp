@@ -17,11 +17,11 @@ public class DownloadUtil {
 
 
         if(size < sizeMb)
-            return df.format(size / sizeKb)+ " Kb";
+            return df.format(size / sizeKb)+ " KB";
         else if(size < sizeGb)
-            return df.format(size / sizeMb) + " Mb";
+            return df.format(size / sizeMb) + " MB";
         else if(size < sizeTerra)
-            return df.format(size / sizeGb) + " Gb";
+            return df.format(size / sizeGb) + " GB";
 
         return "";
     }

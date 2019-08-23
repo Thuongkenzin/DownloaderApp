@@ -5,7 +5,15 @@ public class FileChunk {
     long endPosition;
     long id;
     long idFileDownload;
+    long totalDownloaded;
 
+    public long getTotalDownloaded() {
+        return totalDownloaded;
+    }
+
+    public void setTotalDownloaded(long totalDownloaded) {
+        this.totalDownloaded = totalDownloaded;
+    }
 
     public long getStartPosition() {
         return startPosition;

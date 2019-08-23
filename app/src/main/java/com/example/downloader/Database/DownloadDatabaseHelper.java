@@ -8,12 +8,9 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 import com.example.downloader.Database.DownloadContract.DownloadEntry;
 import com.example.downloader.DownloadChunk.DownloadChunk;
-import com.example.downloader.DownloadThread;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public class DownloadDatabaseHelper extends SQLiteOpenHelper {
 
@@ -22,17 +19,19 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "DownloadDatabase.db";
     private static final int DATABASE_VERSION = 1;
     private static final String TEXT_TYPE = " TEXT";
+    private static final String INTEGER_TYPE= " INTEGER";
     private static final String COMMA_STEP= ",";
     private static final String SQL_CREATE_ENTRIES = "CREATE TABLE " + DownloadEntry.TABLE_NAME + " (" +
             DownloadEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + DownloadEntry.COLUMN_FILE_NAME + TEXT_TYPE + COMMA_STEP +
             DownloadEntry.COLUMN_FILE_URL + TEXT_TYPE + COMMA_STEP + DownloadEntry.COLUMN_FILE_DIR + TEXT_TYPE + COMMA_STEP +
-            DownloadEntry.COLUMN_FILE_LENGTH + " INTEGER" + COMMA_STEP +
-            DownloadEntry.COLUMN_FILE_STATE + " INTEGER" + " )";
+            DownloadEntry.COLUMN_FILE_LENGTH + INTEGER_TYPE + COMMA_STEP +
+            DownloadEntry.COLUMN_FILE_STATE + INTEGER_TYPE + " )";
 
     private static final String SQL_CREATE_CHUNK_DOWNLOAD= "CREATE TABLE "+ DownloadEntry.TABLE_DOWNLOAD_CHUNK + " ("+
             DownloadEntry.COLUMN_CHUNK_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
-            DownloadEntry.COLUMN_START_POSITION + " INTEGER" + COMMA_STEP +
-            DownloadEntry.COLUMN_END_POSITION + " INTEGER" + COMMA_STEP+
+            DownloadEntry.COLUMN_START_POSITION + INTEGER_TYPE + COMMA_STEP +
+            DownloadEntry.COLUMN_END_POSITION + INTEGER_TYPE + COMMA_STEP +
+            DownloadEntry.COLUMN_TOTAL_DOWNLOADED_CHUNK + COMMA_STEP +
             DownloadEntry.COLUMN_ID_FILE_DOWNLOAD_FK + " INTEGER REFERENCES "+ DownloadEntry.TABLE_NAME +" )";
 
     private static final String SQL_DELETE_ENTRIES = "DROP TABLE IF EXISTS " + DownloadEntry.TABLE_NAME;
@@ -122,6 +121,10 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
     }
     public void deleteFileDownload(long id){
         SQLiteDatabase db = this.getWritableDatabase();
+        //delete all chunk of file
+        db.delete(DownloadEntry.TABLE_DOWNLOAD_CHUNK,DownloadEntry.COLUMN_ID_FILE_DOWNLOAD_FK + "=?",
+                new String[]{String.valueOf(id)});
+        //delete file download
         db.delete(DownloadEntry.TABLE_NAME,DownloadEntry._ID + "=?" ,new String[]{String.valueOf(id)});
     }
 
@@ -193,9 +196,10 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
             values.put(DownloadEntry.COLUMN_ID_FILE_DOWNLOAD_FK,idFile);
             values.put(DownloadEntry.COLUMN_START_POSITION,chunk.getStart());
             values.put(DownloadEntry.COLUMN_END_POSITION,chunk.getEnd());
+            values.put(DownloadEntry.COLUMN_TOTAL_DOWNLOADED_CHUNK,chunk.getTotalDownload());
 
             if(chunk.getId()!=-1){
-                db.update(DownloadEntry.TABLE_DOWNLOAD_CHUNK,values,DownloadEntry.COLUMN_CHUNK_ID + "=?",
+                db.update(DownloadEntry.TABLE_DOWNLOAD_CHUNK, values, DownloadEntry.COLUMN_CHUNK_ID + "=?",
                         new String[]{String.valueOf(chunk.getId())});
                 db.setTransactionSuccessful();
             }else {
@@ -226,12 +230,14 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
             values.put(DownloadEntry.COLUMN_FILE_DIR,file.getUriFileDir());
 
             //First try to update in case the file download already exists in the database
-            int rows = db.update(DownloadEntry.TABLE_NAME,values,DownloadEntry.COLUMN_FILE_NAME +"= ?",new String[]{file.getFileName()});
+            int rows = db.update(DownloadEntry.TABLE_NAME, values,
+                    DownloadEntry.COLUMN_FILE_NAME + "= ?", new String[]{file.getFileName()});
 
             //check if update success
             if(rows == 1){
                 //get the primary key of the file download which just updated
-                String fileSelectQuery = String.format("SELECT %s FROM %s WHERE %s = ?", DownloadEntry._ID,DownloadEntry.TABLE_NAME,DownloadEntry.COLUMN_FILE_NAME);
+                String fileSelectQuery = String.format("SELECT %s FROM %s WHERE %s = ?",
+                        DownloadEntry._ID,DownloadEntry.TABLE_NAME,DownloadEntry.COLUMN_FILE_NAME);
                 Cursor cursor = db.rawQuery(fileSelectQuery, new String[]{file.getFileName()});
                 try{
                     if(cursor.moveToFirst()){
@@ -275,6 +281,8 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
                             DownloadEntry.COLUMN_END_POSITION))));
                     fileChunk.setId(Long.parseLong(cursor.getString(cursor.getColumnIndex(
                             DownloadEntry.COLUMN_CHUNK_ID))));
+                    fileChunk.setTotalDownloaded(Long.parseLong(cursor.getString(cursor.getColumnIndex(
+                            DownloadEntry.COLUMN_TOTAL_DOWNLOADED_CHUNK))));
                     fileChunk.setIdFileDownload(Long.parseLong(cursor.getString(cursor.getColumnIndex(
                             DownloadEntry.COLUMN_ID_FILE_DOWNLOAD_FK))));
                     chunks.add(fileChunk);
