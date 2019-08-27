@@ -17,7 +17,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.downloader.DownloadUtil;
+import com.example.downloader.Utilities.DownloadUtil;
 import com.example.downloader.R;
 
 import java.io.File;

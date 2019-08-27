@@ -31,6 +31,7 @@ import android.widget.Toast;
 import com.example.downloader.UI.FragmentCompleteDownload;
 import com.example.downloader.UI.FragmentPendingDownload;
 import com.example.downloader.UI.TabAdapter;
+import com.example.downloader.Utilities.CheckForSDCard;
 
 import java.io.File;
 
@@ -73,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
        // actionBar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
 
         downloadManager.getFileDownloadFromDatabase(this);
-        downloadManager.startAllDownload();
+        //downloadManager.startAllDownload();
         createViewPagerLayout();
 
         mDrawerLayout = findViewById(R.id.drawer_layout);

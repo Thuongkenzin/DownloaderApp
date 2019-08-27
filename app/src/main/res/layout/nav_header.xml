@@ -1,21 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="192dp"
+    android:layout_height="wrap_content"
     android:background="?attr/colorPrimaryDark"
-    android:padding="16dp"
     android:theme="@style/ThemeOverlay.AppCompat.Dark"
     android:orientation="vertical"
     android:gravity="bottom">
 
     <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/icons8_download"/>
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:padding="8dp"
+        android:layout_marginTop="48dp"
+        android:layout_marginBottom="12dp"
+        android:layout_gravity="center_horizontal"
+        android:src="@drawable/download"/>
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/app_name"
         android:textSize="25sp"
+        android:textColor="@android:color/white"
+        android:gravity="center"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="32dp"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"/>
 </LinearLayout>

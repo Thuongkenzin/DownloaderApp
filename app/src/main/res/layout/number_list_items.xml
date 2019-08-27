@@ -8,7 +8,8 @@
     android:layout_marginEnd="8dp"
     android:layout_marginBottom="8dp"
     app:cardCornerRadius="6dp"
-    app:cardElevation="6dp">
+    app:cardBackgroundColor="@color/lightWhite"
+    app:cardElevation="4dp">
 <android.support.constraint.ConstraintLayout
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -19,7 +20,8 @@
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
         tools:text="Title"
-        android:textSize="14sp"
+        android:textColor="@color/blackPearl"
+        android:textSize="16sp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toEndOf="@id/btn_control_download"
         app:layout_constraintEnd_toStartOf="@id/btn_cancel"
@@ -34,6 +36,9 @@
         app:layout_constraintEnd_toEndOf="@id/tv_item_number"
         app:layout_constraintTop_toBottomOf="@id/tv_item_number"
         android:indeterminate="false"
+        android:foregroundTint="@color/azureRadiance"
+        android:indeterminateTint="@color/azureRadiance"
+        android:progressTint="@color/azureRadiance"
         tools:progress="50"
         android:max="100" />
 
@@ -46,8 +51,8 @@
         android:layout_toStartOf="@+id/pb_item_number"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:padding="10dp"
-        android:tint="#ba160c"
+        android:padding="6dp"
+        android:tint="@color/azureRadiance"
         android:contentDescription="button control download"
         app:layout_constraintStart_toStartOf="parent"
         android:src="@drawable/ic_play_arrow_24dp" />
@@ -59,7 +64,8 @@
         app:layout_constraintTop_toBottomOf="@id/pb_item_number"
         app:layout_constraintStart_toStartOf="@id/pb_item_number"
         app:layout_constraintEnd_toEndOf="@id/pb_item_number"
-
+        android:textColor="#666"
+        tools:text="Some description text"
         />
     <ImageView
         android:layout_width="50dp"
@@ -71,6 +77,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:id="@+id/btn_cancel"
+        android:tint="@android:color/holo_red_dark"
         android:background="@android:color/transparent"
         android:src="@drawable/ic_close_black_24dp"/>
 </android.support.constraint.ConstraintLayout>

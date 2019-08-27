@@ -1,4 +1,4 @@
-package com.example.downloader;
+package com.example.downloader.Utilities;
 
 import android.os.Environment;
 

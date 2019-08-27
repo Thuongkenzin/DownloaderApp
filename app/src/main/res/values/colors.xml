@@ -3,4 +3,9 @@
     <color name="colorPrimary">#008577</color>
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D81B60</color>
+    <color name="darkGrey">#332C49</color>
+    <color name="selectiveYellow">#FFBD34</color>
+    <color name="lightWhite">#F7F6F9</color>
+    <color name="blackPearl">#06060B</color>
+    <color name="azureRadiance">#6088FE</color>
 </resources>

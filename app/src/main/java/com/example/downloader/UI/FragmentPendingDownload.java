@@ -1,9 +1,11 @@
 package com.example.downloader.UI;
 
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -11,9 +13,11 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.InputType;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,8 +32,6 @@ import com.example.downloader.R;
 
 
 public class FragmentPendingDownload extends Fragment {
-    Button mDownloadBtn;
-    Button mViewBtn;
     final com.example.downloader.DownloadManager downloadManager = com.example.downloader.DownloadManager.getInstance();
     private RecyclerView mRecyclerView;
     private FloatingActionButton mAddLinkButton;
@@ -40,8 +42,6 @@ public class FragmentPendingDownload extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_pending_download,container,false);
 
-        mDownloadBtn = view.findViewById(R.id.downloadURL);
-        mViewBtn = view.findViewById(R.id.view_download);
         mAddLinkButton = view.findViewById(R.id.fab_add_link);
 
         mRecyclerView = view.findViewById(R.id.rv_numbers);
@@ -51,18 +51,23 @@ public class FragmentPendingDownload extends Fragment {
         downloadThreadAdapter = new DownloadThreadAdapter();
         mRecyclerView.setAdapter(downloadThreadAdapter);
 
-        mDownloadBtn.setOnClickListener(new View.OnClickListener() {
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction("ACTION_UPDATE_LIST_DOWNLOAD");
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mUpdateListDownloadReceiver,
+                intentFilter);
+
+       /* mDownloadBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String url ="https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
                 String url2 = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
                 String url3 = "http://speedtest.ftp.otenet.gr/files/test10Mb.db";
                 if(isConnectingToInternet()){
-                    downloadManager.startUrlDownload(url);
-                    downloadManager.startUrlDownload(url2);
-                    downloadManager.startUrlDownload(url3);
-                    downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_30mb.mp4");
-                    downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_2mb.mp4");
+//                    downloadManager.startUrlDownload(url);
+//                    downloadManager.startUrlDownload(url2);
+//                    downloadManager.startUrlDownload(url3);
+//                    downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_30mb.mp4");
+//                    downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_2mb.mp4");
                     //downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4");
 
                     downloadThreadAdapter.notifyDataSetChanged();
@@ -82,7 +87,7 @@ public class FragmentPendingDownload extends Fragment {
                 //openDownloadFolder();
 
             }
-        });
+        });*/
         mAddLinkButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -93,7 +98,7 @@ public class FragmentPendingDownload extends Fragment {
                 final EditText input = new EditText(getContext());
                 input.setInputType(InputType.TYPE_CLASS_TEXT);
                 input.setHint("Type or paste link");
-                input.setText("http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
+                input.setText("https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg");
                 builder.setView(input);
 
                 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -101,14 +106,12 @@ public class FragmentPendingDownload extends Fragment {
                     public void onClick(DialogInterface dialog, int which) {
                         String url = input.getText().toString();
                         if(URLUtil.isValidUrl(url)) {
-                            //them vao database
-                            //downloadManager.addFileDownloadToData(getContext(),url);
+                            //service running
                             Intent intentDownload = new Intent(getContext(),DownloadService.class)
                             .setAction(DownloadService.ACTION_SEND_URL_DOWNLOAD);
                             intentDownload.putExtra(DownloadService.URL_FILE_DOWNLOAD,url);
                             getContext().startService(intentDownload);
                             //downloadManager.startUrlDownload(url);
-                            downloadThreadAdapter.notifyItemInserted(0);
                         }else{
                             Toast.makeText(getContext(), "Url is invalid, please try again!", Toast.LENGTH_SHORT).show();
                         }
@@ -133,5 +136,20 @@ public class FragmentPendingDownload extends Fragment {
             return true;
         else
             return false;
+    }
+
+    private BroadcastReceiver mUpdateListDownloadReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD)){
+                downloadThreadAdapter.notifyItemInserted(0);
+            }
+        }
+    };
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mUpdateListDownloadReceiver);
     }
 }

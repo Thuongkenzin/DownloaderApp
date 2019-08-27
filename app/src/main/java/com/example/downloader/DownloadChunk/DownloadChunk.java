@@ -2,9 +2,6 @@ package com.example.downloader.DownloadChunk;
 
 import android.util.Log;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
@@ -19,7 +16,6 @@ public class DownloadChunk implements Runnable {
     private long end;
     FileChannel fileChannel;
     boolean pauseChunkDownload;
-    Object lockObject;
     long totalDownload = 0;
     String pathFile;
     public int state;
@@ -42,15 +38,15 @@ public class DownloadChunk implements Runnable {
         this.pathFile = pathFile;
         this.id =-1;
         this.pauseChunkDownload = false;
-        lockObject = new Object();
+
     }
-    public DownloadChunk(long id, long idFileDownload,long start, long end){
+    public DownloadChunk(long id, long idFileDownload,long start, long end, long totalDownload){
         this.id = id;
         this.idFileDownload = idFileDownload;
         this.start = start;
         this.end = end;
+        this.totalDownload = totalDownload;
         this.pauseChunkDownload = true;
-        lockObject = new Object();
     }
 
     public long getId() {
@@ -130,10 +126,10 @@ public class DownloadChunk implements Runnable {
 
     private void runDownload() {
 
-//        if (totalDownload > end - 1) {
-//            state = DownloadMultipleChunk.DOWNLOAD_SUCCESS;
-//            return;
-//        }
+        if (totalDownload > end - 1) {
+            state = DownloadMultipleChunk.DOWNLOAD_SUCCESS;
+            return;
+        }
 
         try {
             RandomAccessFile file = new RandomAccessFile(pathFile, "rw");
@@ -143,35 +139,35 @@ public class DownloadChunk implements Runnable {
             connection.setRequestMethod("GET");
 
             connection.setRequestProperty("Range", "bytes=" + start + "-" + end);
+            Log.v(TAG, "start:" + start + ", end:" + end);
             connection.setDoInput(true);
             connection.setDoOutput(false);
             connection.connect();
+
+            if(connection.getResponseCode() != HttpURLConnection.HTTP_PARTIAL){
+                releaseNetwork(connection);
+                return;
+            }
             long fileSize = connection.getContentLength();
-            Log.v(TAG, "length1:" + fileSize);
+            Log.v(TAG, "Chunk length:" + fileSize);
 
-            InputStream in = connection.getInputStream();
-
+            InputStream in =connection.getInputStream();
             byte[] buffer = new byte[4000];
             int count = 0;
             long position = start;
-
 
             while ((count = in.read(buffer)) != -1) {
                 totalDownload += count;
                 ByteBuffer byteBuffer = ByteBuffer.wrap(buffer, 0, count);
                 byteBuffer.rewind();
-//                synchronized (lockObject) {
-//                    while (pauseChunkDownload) {
-//                        lockObject.wait();
-//                    }
-//                }
                 fileChannel.write(byteBuffer, position);
                 start += count;
                 position = position + count;
-                Log.v(TAG,"total count:" + totalDownload);
 
                 if (isPausedOrCancelled()) {
-                    release(connection);
+                    in.close();
+                    fileChannel.close();
+                    releaseNetwork(connection);
                     return;
                 }
             }
@@ -179,7 +175,8 @@ public class DownloadChunk implements Runnable {
             Log.v(TAG, "file Lenght:" + fileChannel.size());
 
             state = DownloadMultipleChunk.DOWNLOAD_SUCCESS;
-
+            in.close();
+            fileChannel.close();
             connection.disconnect();
         } catch (Exception e) {
             e.printStackTrace();
@@ -194,27 +191,14 @@ public class DownloadChunk implements Runnable {
 
     }
 
-    private void release(HttpURLConnection connection) {
+    private void releaseNetwork(HttpURLConnection connection) {
         try {
             connection.disconnect();
         } catch (Exception ignored) {
         }
     }
 
-    public void onPause() {
-        synchronized (lockObject) {
-            pauseChunkDownload = true;
-            Log.v(TAG, "Pause");
-        }
-    }
 
-    public void onResume() {
-        synchronized (lockObject) {
-            pauseChunkDownload = false;
-            Log.v(TAG, "Resume");
-            lockObject.notifyAll();
-        }
-    }
 
     public void pauseChunkDownload(){
         state = DownloadMultipleChunk.DOWNLOAD_PAUSE;

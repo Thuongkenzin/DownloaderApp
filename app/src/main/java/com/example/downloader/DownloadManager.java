@@ -72,9 +72,13 @@ public class DownloadManager {
             for (DownloadMultipleChunk thread : listDownloadFile) {
                 //pool.submit(thread);
                 threadPoolExecutor.execute(thread);
-                thread.pauseChunkDownload();
+                //thread.pauseChunkDownload();
             }
         }
+    }
+    public void resumeDownloadMultipleChunk(DownloadMultipleChunk downloadMultipleChunk){
+        downloadMultipleChunk.setStateDownload(DownloadMultipleChunk.MODE_RESUME);
+        threadPoolExecutor.execute(downloadMultipleChunk);
     }
 
     public void addFileDownloadDoneToListComplete(DownloadMultipleChunk chunk){
@@ -97,7 +101,7 @@ public class DownloadManager {
         for (int i = 0; i < listDownloadFile.size(); i++) {
             DownloadMultipleChunk thread = listDownloadFile.get(i);
             if (thread.equals(downloadTask)) {
-                thread.cancelChunkDownload();
+                downloadTask.cancelChunkDownload();
                 listDownloadFile.remove(thread);
                 break;
             }
@@ -139,6 +143,7 @@ public class DownloadManager {
                 List<FileChunk> fileChunkList = databaseHelper.getAllChunkDownload(fileDownload.get_id());
                 List<DownloadChunk> fileDownloadChunk = convertFileChunkToDownloadChunk(fileChunkList, downloadTask);
                 downloadTask.getListChunkDownload().addAll(fileDownloadChunk);
+                downloadTask.setStateDownload(DownloadMultipleChunk.DOWNLOAD_PAUSE);
                 listDownloadFile.add(downloadTask);
             }else{
                 completeListDownload.add(fileDownload);
@@ -151,7 +156,7 @@ public class DownloadManager {
             //if file chunk is not done, add to the list to continue downloading.
             if(chunk.getStartPosition() < chunk.getEndPosition()){
                 DownloadChunk downloadChunk = new DownloadChunk(chunk.getId(),chunk.getIdFileDownload(),
-                        chunk.getStartPosition(),chunk.getEndPosition());
+                        chunk.getStartPosition(),chunk.getEndPosition(),chunk.getTotalDownloaded());
                 downloadChunk.setUrlDownload(downloadTask.getUrlDownload());
                 downloadChunk.setPathFile(downloadTask.getPathFile());
                 downloadChunkList.add(downloadChunk);

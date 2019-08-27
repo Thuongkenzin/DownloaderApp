@@ -12,15 +12,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.MimeTypeMap;
 import android.widget.ArrayAdapter;
-import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.downloader.Database.DownloadDatabaseHelper;
 import com.example.downloader.Database.FileDownload;
 import com.example.downloader.DownloadManager;
-import com.example.downloader.DownloadUtil;
+import com.example.downloader.Utilities.DownloadUtil;
 import com.example.downloader.R;
 
 import java.io.File;
@@ -34,8 +33,9 @@ public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
 
     private static class ViewHolder {
         TextView textName;
+        ImageView imageTypeView;
         TextView textSize;
-        ImageButton btnOption;
+        ImageView btnOption;
     }
 
     @Override
@@ -50,6 +50,7 @@ public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
             viewHolder.textName = convertView.findViewById(R.id.tv_download_complete_item);
             viewHolder.textSize = convertView.findViewById(R.id.tv_file_size_download_complete);
             viewHolder.btnOption = convertView.findViewById(R.id.btn_option);
+            viewHolder.imageTypeView = convertView.findViewById(R.id.image_view_type);
             convertView.setTag(viewHolder);
         } else {
             viewHolder = (ViewHolder) convertView.getTag();
@@ -57,7 +58,24 @@ public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
 
         //get file have been saved in SD
         final File file = new File(downloadThread.getUriFileDir());
+        String mime = getMimeTypeFile(file);
 
+        try {
+            if (mime.contains("image")) {
+                viewHolder.imageTypeView.setImageResource(R.drawable.image_icon);
+            } else if (mime.contains("video")) {
+                viewHolder.imageTypeView.setImageResource(R.drawable.video_icon);
+            } else if (mime.contains("audio")) {
+                viewHolder.imageTypeView.setImageResource(R.drawable.audio_icon);
+            } else if (mime.contains("pdf")) {
+                viewHolder.imageTypeView.setImageResource(R.drawable.pdf_icon);
+            } else {
+                viewHolder.imageTypeView.setImageResource(R.drawable.undefine_icon);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+            viewHolder.imageTypeView.setImageResource(R.drawable.undefine_icon);
+        }
         viewHolder.textName.setText(downloadThread.getFileName());
         viewHolder.textSize.setText(DownloadUtil.getStringSizeLengthFile(downloadThread.getFileLength()));
         viewHolder.btnOption.setOnClickListener(new View.OnClickListener() {
@@ -75,10 +93,8 @@ public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
                                 try {
                                     if (file.exists()) {
                                         Intent intent = new Intent(Intent.ACTION_VIEW);
-                                        MimeTypeMap map = MimeTypeMap.getSingleton();
-                                        String ext = MimeTypeMap.getFileExtensionFromUrl(file.getName());
-                                        String mime = map.getMimeTypeFromExtension(ext);
-                                        intent.setDataAndType(Uri.fromFile(file), mime);
+                                        String mimeTypeFile = getMimeTypeFile(file);
+                                        intent.setDataAndType(Uri.fromFile(file), mimeTypeFile);
                                         getContext().startActivity(intent);
                                     } else {
                                         //DownloadDatabaseHelper.getInstance(getContext()).deleteFileDownload(downloadThread.get_id());
@@ -101,7 +117,6 @@ public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
                                         if (file != null) {
                                             file.delete();
                                         }
-                                        //DownloadDatabaseHelper.getInstance(getContext()).deleteFileDownload(downloadThread.get_id());
                                         downloadManager.deleteFileFromDatabase(getContext(),downloadThread.get_id());
                                         downloadManager.getCompleteListDownload().remove(downloadThread);
                                         notifyDataSetChanged();
@@ -130,6 +145,12 @@ public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
         });
 
         return convertView;
+    }
+
+    private String getMimeTypeFile(File file) {
+        MimeTypeMap map = MimeTypeMap.getSingleton();
+        String ext = MimeTypeMap.getFileExtensionFromUrl(file.getName());
+        return map.getMimeTypeFromExtension(ext);
     }
 
 
