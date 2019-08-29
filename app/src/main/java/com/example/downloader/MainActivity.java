@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
         actionBar.setDisplayHomeAsUpEnabled(true);
        // actionBar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
 
-        downloadManager.getFileDownloadFromDatabase(this);
+        //downloadManager.getFileDownloadFromDatabase(this);
         //downloadManager.startAllDownload();
         createViewPagerLayout();
 

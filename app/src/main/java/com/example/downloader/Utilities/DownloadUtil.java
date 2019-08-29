@@ -1,8 +1,14 @@
 package com.example.downloader.Utilities;
 
 import android.os.SystemClock;
+import android.webkit.MimeTypeMap;
 
+import java.io.File;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 public class DownloadUtil {
 
@@ -29,6 +35,21 @@ public class DownloadUtil {
     public static int createNotificationId(){
         int id = (int) SystemClock.uptimeMillis();
         return id;
+    }
+    public static String getDayMonthYear(Date date){
+        // Date format : "dow mon dd hh:mm:ss zzz yyyy"
+        String dateTime = date.toString();
+
+        String[] dateFormat = dateTime.split(" ");
+        String dayMonYear = dateFormat[0] +" "+ dateFormat[1] + " " + dateFormat[2] + " " +
+                dateFormat[5];
+        return  dayMonYear;
+
+    }
+    public static String getMimeTypeFile(File file) {
+        MimeTypeMap map = MimeTypeMap.getSingleton();
+        String ext = MimeTypeMap.getFileExtensionFromUrl(file.getName());
+        return map.getMimeTypeFromExtension(ext);
     }
 
 }

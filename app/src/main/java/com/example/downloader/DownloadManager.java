@@ -89,20 +89,27 @@ public class DownloadManager {
         listenerUpdate.updateList();
     }
 
-    public void startUrlDownload(String url) {
-        DownloadMultipleChunk downloadTask = new DownloadMultipleChunk(url);
+    public void startUrlDownload(String url,Context context) {
+        DownloadMultipleChunk downloadTask = new DownloadMultipleChunk(url,context);
         listDownloadFile.add(0,downloadTask);
         //pool.submit(downloadTask);
         threadPoolExecutor.execute(downloadTask);
     }
 
+    public DownloadMultipleChunk startDownloadTask(String url){
+        DownloadMultipleChunk downloadTask = new DownloadMultipleChunk(url);
+        listDownloadFile.add(0,downloadTask);
+        //pool.submit(downloadTask);
+        threadPoolExecutor.execute(downloadTask);
+        return downloadTask;
+    }
 
     public void cancelDownload(DownloadMultipleChunk downloadTask) {
         for (int i = 0; i < listDownloadFile.size(); i++) {
-            DownloadMultipleChunk thread = listDownloadFile.get(i);
-            if (thread.equals(downloadTask)) {
-                downloadTask.cancelChunkDownload();
-                listDownloadFile.remove(thread);
+            DownloadMultipleChunk chunk = listDownloadFile.get(i);
+            if (chunk.equals(downloadTask)) {
+                chunk.cancelChunkDownload();
+                listDownloadFile.remove(chunk);
                 break;
             }
         }
@@ -164,4 +171,38 @@ public class DownloadManager {
         }
         return downloadChunkList;
     }
+    public int pauseDownloadTask(String fileName){
+        for(int i=0;i<listDownloadFile.size();i++){
+            DownloadMultipleChunk chunk = listDownloadFile.get(i);
+            if(chunk.getFileName().equals(fileName)){
+                chunk.pauseChunkDownload();
+                return i;
+            }
+        }
+        return -1;
+    }
+    public int cancelDownloadTask(String fileName){
+        for(int i=0;i<listDownloadFile.size();i++){
+            DownloadMultipleChunk chunk = listDownloadFile.get(i);
+            if(chunk.getFileName().equals(fileName)){
+                chunk.cancelChunkDownload();
+                listDownloadFile.remove(chunk);
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public int resumeDownloadMultipleChunk(String fileName){
+        for(int i=0;i<listDownloadFile.size();i++){
+            DownloadMultipleChunk chunk = listDownloadFile.get(i);
+            if(chunk.getFileName().equals(fileName)){
+                chunk.setStateDownload(DownloadMultipleChunk.MODE_RESUME);
+                threadPoolExecutor.execute(chunk);
+                return i;
+            }
+        }
+        return -1;
+    }
+
 }

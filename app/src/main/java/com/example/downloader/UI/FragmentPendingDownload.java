@@ -17,19 +17,26 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.InputType;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.URLUtil;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.downloader.Adapter.DownloadThreadAdapter;
+import com.example.downloader.DownloadChunk.DownloadMultipleChunk;
 import com.example.downloader.DownloadService;
 import com.example.downloader.R;
 
+//Link download example
+//                String url ="https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
+//                String url2 = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+//                String url3 = "http://speedtest.ftp.otenet.gr/files/test10Mb.db";
+
+//                 https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_30mb.mp4");
+//                  "https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_2mb.mp4");
+//"https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4");
 
 public class FragmentPendingDownload extends Fragment {
     final com.example.downloader.DownloadManager downloadManager = com.example.downloader.DownloadManager.getInstance();
@@ -52,42 +59,13 @@ public class FragmentPendingDownload extends Fragment {
         mRecyclerView.setAdapter(downloadThreadAdapter);
 
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction("ACTION_UPDATE_LIST_DOWNLOAD");
+        intentFilter.addAction(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_ADD);
+        intentFilter.addAction(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_PAUSE);
+        intentFilter.addAction(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_CANCEL);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mUpdateListDownloadReceiver,
                 intentFilter);
 
-       /* mDownloadBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String url ="https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
-                String url2 = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-                String url3 = "http://speedtest.ftp.otenet.gr/files/test10Mb.db";
-                if(isConnectingToInternet()){
-//                    downloadManager.startUrlDownload(url);
-//                    downloadManager.startUrlDownload(url2);
-//                    downloadManager.startUrlDownload(url3);
-//                    downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_30mb.mp4");
-//                    downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_2mb.mp4");
-                    //downloadManager.startUrlDownload("https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4");
 
-                    downloadThreadAdapter.notifyDataSetChanged();
-                } else {
-                    Toast.makeText(getContext(), "There is no internet connection", Toast.LENGTH_SHORT).show();
-                }
-
-
-            }
-        });
-
-        //open download folder
-        mViewBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-               startActivity(new Intent(android.app.DownloadManager.ACTION_VIEW_DOWNLOADS));
-                //openDownloadFolder();
-
-            }
-        });*/
         mAddLinkButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -98,22 +76,25 @@ public class FragmentPendingDownload extends Fragment {
                 final EditText input = new EditText(getContext());
                 input.setInputType(InputType.TYPE_CLASS_TEXT);
                 input.setHint("Type or paste link");
-                input.setText("https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg");
+                input.setText("http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
                 builder.setView(input);
 
                 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String url = input.getText().toString();
-                        if(URLUtil.isValidUrl(url)) {
-                            //service running
-                            Intent intentDownload = new Intent(getContext(),DownloadService.class)
-                            .setAction(DownloadService.ACTION_SEND_URL_DOWNLOAD);
-                            intentDownload.putExtra(DownloadService.URL_FILE_DOWNLOAD,url);
-                            getContext().startService(intentDownload);
-                            //downloadManager.startUrlDownload(url);
+                        if (isConnectingToInternet()) {
+                            if (URLUtil.isValidUrl(url)) {
+                                //service running
+                                Intent intentDownload = new Intent(getContext(), DownloadService.class)
+                                        .setAction(DownloadService.ACTION_SEND_URL_DOWNLOAD);
+                                intentDownload.putExtra(DownloadService.URL_FILE_DOWNLOAD, url);
+                                getContext().startService(intentDownload);
+                            } else {
+                                Toast.makeText(getContext(), "Url is invalid, please try again!", Toast.LENGTH_SHORT).show();
+                            }
                         }else{
-                            Toast.makeText(getContext(), "Url is invalid, please try again!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), "There is no internet connection.", Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
@@ -141,9 +122,18 @@ public class FragmentPendingDownload extends Fragment {
     private BroadcastReceiver mUpdateListDownloadReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD)){
+            if(intent.getAction().equals(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_ADD)){
                 downloadThreadAdapter.notifyItemInserted(0);
             }
+            if(intent.getAction().equals(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_PAUSE)){
+                int position = intent.getIntExtra("position",0);
+                downloadThreadAdapter.notifyItemChanged(position);
+            }
+            if(intent.getAction().equals(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_CANCEL)){
+                int position = intent.getIntExtra("position",0);
+                downloadThreadAdapter.notifyItemRemoved(position);
+            }
+
         }
     };
 
@@ -152,4 +142,5 @@ public class FragmentPendingDownload extends Fragment {
         super.onDestroy();
         LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mUpdateListDownloadReceiver);
     }
+
 }

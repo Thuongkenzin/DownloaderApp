@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -23,6 +24,7 @@ import com.example.downloader.Utilities.DownloadUtil;
 import com.example.downloader.R;
 
 import java.io.File;
+import java.util.Date;
 import java.util.List;
 
 public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
@@ -58,7 +60,10 @@ public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
 
         //get file have been saved in SD
         final File file = new File(downloadThread.getUriFileDir());
-        String mime = getMimeTypeFile(file);
+        Date lastModDate = new Date(file.lastModified());
+
+        Log.v("DownloadAdapter:", "lastModDate:" + lastModDate);
+        String mime = DownloadUtil.getMimeTypeFile(file);
 
         try {
             if (mime.contains("image")) {
@@ -69,6 +74,8 @@ public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
                 viewHolder.imageTypeView.setImageResource(R.drawable.audio_icon);
             } else if (mime.contains("pdf")) {
                 viewHolder.imageTypeView.setImageResource(R.drawable.pdf_icon);
+            }else if(mime.contains("text")){
+                viewHolder.imageTypeView.setImageResource(R.drawable.text_file_icon);
             } else {
                 viewHolder.imageTypeView.setImageResource(R.drawable.undefine_icon);
             }
@@ -77,7 +84,8 @@ public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
             viewHolder.imageTypeView.setImageResource(R.drawable.undefine_icon);
         }
         viewHolder.textName.setText(downloadThread.getFileName());
-        viewHolder.textSize.setText(DownloadUtil.getStringSizeLengthFile(downloadThread.getFileLength()));
+        viewHolder.textSize.setText(DownloadUtil.getStringSizeLengthFile(downloadThread.getFileLength())
+        + "\n" + DownloadUtil.getDayMonthYear(lastModDate));
         viewHolder.btnOption.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -93,7 +101,7 @@ public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
                                 try {
                                     if (file.exists()) {
                                         Intent intent = new Intent(Intent.ACTION_VIEW);
-                                        String mimeTypeFile = getMimeTypeFile(file);
+                                        String mimeTypeFile = DownloadUtil.getMimeTypeFile(file);
                                         intent.setDataAndType(Uri.fromFile(file), mimeTypeFile);
                                         getContext().startActivity(intent);
                                     } else {
@@ -147,11 +155,7 @@ public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
         return convertView;
     }
 
-    private String getMimeTypeFile(File file) {
-        MimeTypeMap map = MimeTypeMap.getSingleton();
-        String ext = MimeTypeMap.getFileExtensionFromUrl(file.getName());
-        return map.getMimeTypeFromExtension(ext);
-    }
+
 
 
 }
