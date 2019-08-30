@@ -32,7 +32,7 @@ public class DownloadManager {
         completeListDownload = new ArrayList<>();
     }
 
-    private ExecutorService pool = Executors.newFixedThreadPool(THREAD_POOL_SIZES);
+    private ExecutorService requestDbExecutor = Executors.newSingleThreadExecutor();
     private ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(3,3,60, TimeUnit.SECONDS,
             new LinkedBlockingDeque<Runnable>());
 
@@ -63,8 +63,8 @@ public class DownloadManager {
         return listDownloadFile;
     }
 
-    public ExecutorService getPool() {
-        return pool;
+    public ExecutorService getRequestDbExecutor() {
+        return requestDbExecutor;
     }
 
     public void startAllDownload() {
@@ -92,14 +92,12 @@ public class DownloadManager {
     public void startUrlDownload(String url,Context context) {
         DownloadMultipleChunk downloadTask = new DownloadMultipleChunk(url,context);
         listDownloadFile.add(0,downloadTask);
-        //pool.submit(downloadTask);
         threadPoolExecutor.execute(downloadTask);
     }
 
     public DownloadMultipleChunk startDownloadTask(String url){
         DownloadMultipleChunk downloadTask = new DownloadMultipleChunk(url);
         listDownloadFile.add(0,downloadTask);
-        //pool.submit(downloadTask);
         threadPoolExecutor.execute(downloadTask);
         return downloadTask;
     }
@@ -115,47 +113,65 @@ public class DownloadManager {
         }
     }
 
-    public void deleteFileFromDatabase(Context context, long idFileDelete){
-        DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
-        databaseHelper.deleteFileDownload(idFileDelete);
+    public void deleteFileFromDatabase(final Context context, final long idFileDelete){
+        requestDbExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
+                databaseHelper.deleteFileDownload(idFileDelete);
+            }
+        });
+
     }
 
-    public void saveDownloadFileToDatabaseBeforeExit(Context context){
-        DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
-        for(DownloadMultipleChunk chunk: listDownloadFile){
-            FileDownload fileDownload = new FileDownload(chunk.getUrlDownload(),chunk.getPathFile(),
-                    chunk.getFileSize(),DownloadEntry.STATE_UNCOMPLETE);
-            long idFile =databaseHelper.addOrUpdateFileDownload(fileDownload);
-            List<DownloadChunk>  listDownloadChunk = chunk.getListChunkDownload();
-            for(DownloadChunk fileSmallChunk: listDownloadChunk){
-                databaseHelper.addOrUpdateChunkDownloadFile(idFile,fileSmallChunk);
-            }
+    public void saveDownloadFileToDatabaseBeforeExit(final Context context){
+        requestDbExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
+                for(DownloadMultipleChunk chunk: listDownloadFile){
+                    FileDownload fileDownload = new FileDownload(chunk.getUrlDownload(),chunk.getPathFile(),
+                            chunk.getFileSize(),DownloadEntry.STATE_UNCOMPLETE);
+                    long idFile =databaseHelper.addOrUpdateFileDownload(fileDownload);
+                    List<DownloadChunk>  listDownloadChunk = chunk.getListChunkDownload();
+                    for(DownloadChunk fileSmallChunk: listDownloadChunk){
+                        databaseHelper.addOrUpdateChunkDownloadFile(idFile,fileSmallChunk);
+                    }
 
-        }
-        for(FileDownload fileDownload: completeListDownload){
-            databaseHelper.addOrUpdateFileDownload(fileDownload);
-        }
+                }
+                for(FileDownload fileDownload: completeListDownload){
+                    databaseHelper.addOrUpdateFileDownload(fileDownload);
+                }
+            }
+        });
+
     }
-    public void getFileDownloadFromDatabase(Context context){
-        DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
-        List<FileDownload> fileDownloadList =databaseHelper.getAllFileDownload();
+    public void getFileDownloadFromDatabase(final Context context){
+        requestDbExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
+                List<FileDownload> fileDownloadList =databaseHelper.getAllFileDownload();
 
-        for(FileDownload fileDownload: fileDownloadList){
-            //check file have downloaded done
-            if(fileDownload.getState() == DownloadEntry.STATE_UNCOMPLETE){
-                DownloadMultipleChunk downloadTask = new DownloadMultipleChunk(fileDownload.get_id(),
-                        fileDownload.fileName, fileDownload.getUriFileDir(),fileDownload.getUrlDownload(),
-                        fileDownload.getState(),fileDownload.fileLength);
-                //get file chunk of file download from database
-                List<FileChunk> fileChunkList = databaseHelper.getAllChunkDownload(fileDownload.get_id());
-                List<DownloadChunk> fileDownloadChunk = convertFileChunkToDownloadChunk(fileChunkList, downloadTask);
-                downloadTask.getListChunkDownload().addAll(fileDownloadChunk);
-                downloadTask.setStateDownload(DownloadMultipleChunk.DOWNLOAD_PAUSE);
-                listDownloadFile.add(downloadTask);
-            }else{
-                completeListDownload.add(fileDownload);
+                for(FileDownload fileDownload: fileDownloadList){
+                    //check file have downloaded done
+                    if(fileDownload.getState() == DownloadEntry.STATE_UNCOMPLETE){
+                        DownloadMultipleChunk downloadTask = new DownloadMultipleChunk(fileDownload.get_id(),
+                                fileDownload.fileName, fileDownload.getUriFileDir(),fileDownload.getUrlDownload(),
+                                fileDownload.getState(),fileDownload.fileLength,context);
+                        //get file chunk of file download from database
+                        List<FileChunk> fileChunkList = databaseHelper.getAllChunkDownload(fileDownload.get_id());
+                        List<DownloadChunk> fileDownloadChunk = convertFileChunkToDownloadChunk(fileChunkList, downloadTask);
+                        downloadTask.getListChunkDownload().addAll(fileDownloadChunk);
+                        downloadTask.setStateDownload(DownloadMultipleChunk.DOWNLOAD_PAUSE);
+                        listDownloadFile.add(downloadTask);
+                    }else{
+                        completeListDownload.add(fileDownload);
+                    }
+                }
             }
-        }
+        });
+
     }
     public List<DownloadChunk> convertFileChunkToDownloadChunk(List<FileChunk> fileChunkList,DownloadMultipleChunk downloadTask){
         List<DownloadChunk> downloadChunkList = new ArrayList<>();
@@ -203,6 +219,14 @@ public class DownloadManager {
             }
         }
         return -1;
+    }
+
+    public void cancelAllDownloadTask(){
+        for (DownloadMultipleChunk downloadTask:
+             listDownloadFile) {
+            downloadTask.cancelChunkDownload();
+        }
+        listDownloadFile.clear();
     }
 
 }

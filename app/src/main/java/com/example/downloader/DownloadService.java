@@ -16,11 +16,14 @@ public class DownloadService extends Service {
 
     public static final String TAG = DownloadService.class.getSimpleName();
     public static final int OPEN_ACTIVITY_DOWNLOAD_PENDING_INTENT_ID = 1002;
+    public static final int STOP_SERVICE_DOWNLOAD_PENDING_INTENT_ID = 1004;
     public static final String ACTION_SEND_URL_DOWNLOAD = "action_send_url_download";
     public static final String URL_FILE_DOWNLOAD = "url_file_download";
     public static final String ACTION_UPDATE_LIST_DOWNLOAD_ADD = "ACTION_UPDATE_LIST_DOWNLOAD_ADD";
     public static final String ACTION_UPDATE_LIST_DOWNLOAD_PAUSE = "ACTION_UPDATE_LIST_DOWNLOAD_PAUSE";
     public static final String ACTION_UPDATE_LIST_DOWNLOAD_CANCEL = "ACTION_UPDATE_LIST_DOWNLOAD_CANCEL";
+    public static final String ACTION_STOP_FOREGROUND_SERVICE = "action_stop_foreground_service";
+    public static final String ACTION_UPDATE_LIST_DOWNLOAD_STOP_ALL_DOWNLOAD = "ACTION_UPDATE_LIST_DOWNLOAD_STOP_ALL_DOWNLOAD";
 
     DownloadManager downloadManager = DownloadManager.getInstance();
     public static int idNotificationForeground = 100;
@@ -33,7 +36,6 @@ public class DownloadService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        //downloadManager.getFileDownloadFromDatabase(getApplicationContext());
         NotificationUtils.createNotificationChannel(getApplicationContext());
     }
 
@@ -83,17 +85,32 @@ public class DownloadService extends Service {
                         resumeIntent.putExtra("position", resumePos);
                         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(resumeIntent);
                     }
+                    break;
+                case ACTION_STOP_FOREGROUND_SERVICE:
+                    downloadManager.cancelAllDownloadTask();
+                    stopSelf();
+                    NotificationUtils.clearAllNotifications(getApplicationContext());
+                    Intent stopAllDownloadIntent = new Intent(ACTION_UPDATE_LIST_DOWNLOAD_STOP_ALL_DOWNLOAD);
+                    LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(stopAllDownloadIntent);
+                    break;
             }
         }
         return super.onStartCommand(intent, flags, startId);
     }
 
     public NotificationCompat.Builder createNotificationForeground(Context context){
+        Intent stopServiceIntent = new Intent(context, DownloadService.class);
+        stopServiceIntent.setAction(ACTION_STOP_FOREGROUND_SERVICE);
+        PendingIntent stopForegroundPendingIntent = PendingIntent.getService(context,
+                STOP_SERVICE_DOWNLOAD_PENDING_INTENT_ID,
+                stopServiceIntent,
+                PendingIntent.FLAG_CANCEL_CURRENT);
         NotificationCompat.Builder builderNotification = new NotificationCompat.Builder(context, NotificationUtils.DOWNLOAD_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_arrow_downward_black_24dp)
                 .setContentTitle("Downloader")
-                .setContentText("Downloading file "+ downloadManager.getListDownloadFile().size() + " file")
+                .setContentText("Downloading file ...")
                 .setContentIntent(contentIntent(this))
+                .addAction(0,"Stop service download",stopForegroundPendingIntent)
                 .setOngoing(true)
                 .setAutoCancel(false);
         return builderNotification;
@@ -111,5 +128,6 @@ public class DownloadService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        downloadManager.saveDownloadFileToDatabaseBeforeExit(getApplicationContext());
     }
 }

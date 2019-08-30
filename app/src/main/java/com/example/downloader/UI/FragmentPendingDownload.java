@@ -22,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.URLUtil;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.downloader.Adapter.DownloadThreadAdapter;
@@ -41,6 +42,7 @@ import com.example.downloader.R;
 public class FragmentPendingDownload extends Fragment {
     final com.example.downloader.DownloadManager downloadManager = com.example.downloader.DownloadManager.getInstance();
     private RecyclerView mRecyclerView;
+    private TextView mEmtyTextView;
     private FloatingActionButton mAddLinkButton;
     private DownloadThreadAdapter downloadThreadAdapter;
 
@@ -54,14 +56,49 @@ public class FragmentPendingDownload extends Fragment {
         mRecyclerView = view.findViewById(R.id.rv_numbers);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         mRecyclerView.setLayoutManager(layoutManager);
-
+        mEmtyTextView = view.findViewById(R.id.empty_text_view);
         downloadThreadAdapter = new DownloadThreadAdapter();
         mRecyclerView.setAdapter(downloadThreadAdapter);
+        if(downloadThreadAdapter.getItemCount() == 0) {
+            mEmtyTextView.setVisibility(View.VISIBLE);
+            mRecyclerView.setVisibility(View.GONE);
+        }
+
+        downloadThreadAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
+            @Override
+            public void onChanged() {
+                super.onChanged();
+                checkEmpty();
+
+            }
+            @Override
+            public void onItemRangeInserted(int positionStart, int itemCount) {
+                super.onItemRangeInserted(positionStart, itemCount);
+                checkEmpty();
+            }
+
+            @Override
+            public void onItemRangeRemoved(int positionStart, int itemCount) {
+                super.onItemRangeRemoved(positionStart, itemCount);
+                checkEmpty();
+            }
+
+            public void checkEmpty(){
+                if(downloadThreadAdapter.getItemCount() == 0){
+                    mEmtyTextView.setVisibility(View.VISIBLE);
+                    mRecyclerView.setVisibility(View.GONE);
+                }else{
+                    mRecyclerView.setVisibility(View.VISIBLE);
+                    mEmtyTextView.setVisibility(View.GONE);
+                }
+            }
+        });
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_ADD);
         intentFilter.addAction(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_PAUSE);
         intentFilter.addAction(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_CANCEL);
+        intentFilter.addAction(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_STOP_ALL_DOWNLOAD);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mUpdateListDownloadReceiver,
                 intentFilter);
 
@@ -76,7 +113,6 @@ public class FragmentPendingDownload extends Fragment {
                 final EditText input = new EditText(getContext());
                 input.setInputType(InputType.TYPE_CLASS_TEXT);
                 input.setHint("Type or paste link");
-                input.setText("http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
                 builder.setView(input);
 
                 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -133,6 +169,9 @@ public class FragmentPendingDownload extends Fragment {
                 int position = intent.getIntExtra("position",0);
                 downloadThreadAdapter.notifyItemRemoved(position);
             }
+            if(intent.getAction().equals(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_STOP_ALL_DOWNLOAD)){
+                downloadThreadAdapter.notifyDataSetChanged();
+            }
 
         }
     };
@@ -143,4 +182,17 @@ public class FragmentPendingDownload extends Fragment {
         LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mUpdateListDownloadReceiver);
     }
 
+    public void testDownload(){
+        Intent intentDownload2 = new Intent(getContext(), DownloadService.class)
+                .setAction(DownloadService.ACTION_SEND_URL_DOWNLOAD);
+        String url2 = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+        intentDownload2.putExtra(DownloadService.URL_FILE_DOWNLOAD, url2);
+        getContext().startService(intentDownload2);
+
+        Intent intentDownload3 = new Intent(getContext(), DownloadService.class)
+                .setAction(DownloadService.ACTION_SEND_URL_DOWNLOAD);
+        String url3 = "https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
+        intentDownload3.putExtra(DownloadService.URL_FILE_DOWNLOAD, url3);
+        getContext().startService(intentDownload3);
+    }
 }

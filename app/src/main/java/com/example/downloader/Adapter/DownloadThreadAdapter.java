@@ -105,7 +105,6 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
                             DownloadUtil.getStringSizeLengthFile(sizeDownloaded) + "/" +
                             DownloadUtil.getStringSizeLengthFile(downloadThread.getFileSize()));
                     mProgressBarDownload.setProgress(progress);
-
                 }
             });
 
