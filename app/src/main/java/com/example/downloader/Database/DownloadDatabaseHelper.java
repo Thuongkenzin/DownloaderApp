@@ -203,7 +203,8 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
                         new String[]{String.valueOf(chunk.getId())});
                 db.setTransactionSuccessful();
             }else {
-                db.insertOrThrow(DownloadEntry.TABLE_DOWNLOAD_CHUNK, null, values);
+                long id= db.insertOrThrow(DownloadEntry.TABLE_DOWNLOAD_CHUNK, null, values);
+                chunk.setId(id);
                 db.setTransactionSuccessful();
             }
 

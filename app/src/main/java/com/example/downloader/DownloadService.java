@@ -1,6 +1,5 @@
 package com.example.downloader;
 
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
@@ -24,9 +23,11 @@ public class DownloadService extends Service {
     public static final String ACTION_UPDATE_LIST_DOWNLOAD_CANCEL = "ACTION_UPDATE_LIST_DOWNLOAD_CANCEL";
     public static final String ACTION_STOP_FOREGROUND_SERVICE = "action_stop_foreground_service";
     public static final String ACTION_UPDATE_LIST_DOWNLOAD_STOP_ALL_DOWNLOAD = "ACTION_UPDATE_LIST_DOWNLOAD_STOP_ALL_DOWNLOAD";
+    public static final String ACTION_STOP_SERVICE_DOWNLOAD = "stop_service_download";
 
     DownloadManager downloadManager = DownloadManager.getInstance();
     public static int idNotificationForeground = 100;
+    Context context ;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -37,6 +38,7 @@ public class DownloadService extends Service {
     public void onCreate() {
         super.onCreate();
         NotificationUtils.createNotificationChannel(getApplicationContext());
+        context = getApplicationContext();
     }
 
 
@@ -70,6 +72,8 @@ public class DownloadService extends Service {
                 case DownloadMultipleChunk.ACTION_CANCEL_DOWNLOAD_TASK:
                     String filename = intent.getStringExtra("name");
                     int pos = downloadManager.cancelDownloadTask(filename);
+                    DownloadMultipleChunk downloadTask = downloadManager.getListDownloadFile().get(pos);
+                    downloadManager.deleteFileFromDatabase(context,downloadTask.getId());
                     if (pos != -1) {
                         Intent cancelIntent = new Intent();
                         cancelIntent.setAction(ACTION_UPDATE_LIST_DOWNLOAD_CANCEL);
@@ -87,11 +91,14 @@ public class DownloadService extends Service {
                     }
                     break;
                 case ACTION_STOP_FOREGROUND_SERVICE:
-                    downloadManager.cancelAllDownloadTask();
+                    downloadManager.cancelAllDownloadTask(context);
                     stopSelf();
                     NotificationUtils.clearAllNotifications(getApplicationContext());
                     Intent stopAllDownloadIntent = new Intent(ACTION_UPDATE_LIST_DOWNLOAD_STOP_ALL_DOWNLOAD);
                     LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(stopAllDownloadIntent);
+                    break;
+                case ACTION_STOP_SERVICE_DOWNLOAD:
+                    stopSelf();
                     break;
             }
         }
@@ -128,6 +135,5 @@ public class DownloadService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        downloadManager.saveDownloadFileToDatabaseBeforeExit(getApplicationContext());
     }
 }

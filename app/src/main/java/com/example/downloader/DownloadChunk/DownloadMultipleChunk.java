@@ -8,11 +8,13 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.example.downloader.DownloadManager;
 import com.example.downloader.DownloadService;
 import com.example.downloader.Listener.UpdateCompleteDownloadListener;
 import com.example.downloader.Listener.UpdateProgressListener;
@@ -149,11 +151,11 @@ public class DownloadMultipleChunk implements Runnable {
         this.stateDownload = stateDownload;
     }
 
-    public DownloadMultipleChunk(String urlDownload,Context context) {
+    public DownloadMultipleChunk(String urlDownload,String fileName,Context context) {
         this.urlDownload = urlDownload;
-        mHandler = new Handler();
+        mHandler = new Handler(Looper.getMainLooper());
         stateDownload = MODE_RESUME;
-        this.fileName =  urlDownload.substring(urlDownload.lastIndexOf('/') + 1);
+        this.fileName =  fileName;
         pathFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath()+
                 "/"+fileName;
         this.context = context;
@@ -162,16 +164,7 @@ public class DownloadMultipleChunk implements Runnable {
 
     }
 
-    public DownloadMultipleChunk(String urlDownload) {
-        this.urlDownload = urlDownload;
-        mHandler = new Handler();
-        stateDownload = MODE_RESUME;
-        this.fileName =  urlDownload.substring(urlDownload.lastIndexOf('/') + 1);
-        pathFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath()+
-                "/"+fileName;
-        notificationId= NotificationUtils.createNotificationId();
 
-    }
     public DownloadMultipleChunk(long id, String fileName, String pathFile, String urlDownload,
                                  int stateDownload, long fileSize,Context context) {
         this.id = id;
@@ -180,7 +173,7 @@ public class DownloadMultipleChunk implements Runnable {
         this.urlDownload = urlDownload;
         this.stateDownload = stateDownload;
         this.fileSize = fileSize;
-        this.mHandler = new Handler();
+        this.mHandler = new Handler(Looper.getMainLooper());
         this.context = context;
         this.notificationManager = NotificationManagerCompat.from(context);
         this.notificationId = NotificationUtils.createNotificationId();
@@ -258,6 +251,7 @@ public class DownloadMultipleChunk implements Runnable {
         for (DownloadChunk chunk: listChunkDownload){
             chunk.pauseChunkDownload();
         }
+        mHandler.post(updateUi);
     }
     public void resumeChunkDownload(){
         stateDownload = MODE_RESUME;
@@ -271,7 +265,9 @@ public class DownloadMultipleChunk implements Runnable {
         for(DownloadChunk chunk: listChunkDownload){
             chunk.cancelDownload();
         }
+        notificationManager.cancel(notificationId);
         deleteFileInSDCard();
+
     }
 
     public long getTotalDownloadPrev(){
@@ -305,7 +301,9 @@ public class DownloadMultipleChunk implements Runnable {
             sumDownload = getDownloadedSizeFromChunkFile();
             percent = (int) (100 * sumDownload / fileSize);
             long speedDownload = (sumDownload - preSumDownload);
-
+            if(percent % 10 ==0){
+                DownloadManager.getInstance().saveDownloadFileToDatabaseBeforeExit(context);
+            }
             if(listener!=null) {
                 listener.updateProgress(percent, sumDownload, speedDownload);
                 preSumDownload = sumDownload;
@@ -324,7 +322,7 @@ public class DownloadMultipleChunk implements Runnable {
                 notifyNotificationDownloadComplete();
             }
             if(stateDownload == DOWNLOAD_PAUSE){
-                mHandler.postDelayed(this,500);
+//                mHandler.postDelayed(this,500);
                 mHandler.removeCallbacks(this);
                 updateActionInNotification();
             }
@@ -332,20 +330,6 @@ public class DownloadMultipleChunk implements Runnable {
                 mHandler.removeCallbacks(this);
                 notificationManager.cancel(notificationId);
             }
-//            if(isComplete()){
-//                stateDownload = DownloadMultipleChunk.DOWNLOAD_SUCCESS;
-//                mHandler.removeCallbacks(this);
-//                //updateCompleteListener.notifyCompleteDownloadFile();
-//                notifyNotificationDownloadComplete();
-//            }
-//            if(stateDownload == DOWNLOAD_PAUSE){
-//                mHandler.removeCallbacks(this);
-//                updateActionInNotification();
-//            }
-//            if(stateDownload == DOWNLOAD_CANCEL){
-//                mHandler.removeCallbacks(this);
-//                notificationManager.cancel(notificationId);
-//            }
         }
     };
 
@@ -449,10 +433,10 @@ public class DownloadMultipleChunk implements Runnable {
             builderNotification.mActions.remove(0);
             builderNotification.mActions.add(0,resumeNotificationDownload(context));
             notificationManager.notify(notificationId, builderNotification.build());
-        }else if(stateDownload == MODE_RESUME){
-            builderNotification.mActions.remove(0);
-            builderNotification.mActions.add(0,pauseNotificationDownload(context));
-            notificationManager.notify(notificationId,builderNotification.build());
+//        }else if(stateDownload == MODE_RESUME){
+//            builderNotification.mActions.remove(0);
+//            builderNotification.mActions.add(0,pauseNotificationDownload(context));
+//            notificationManager.notify(notificationId,builderNotification.build());
         }
     }
 }

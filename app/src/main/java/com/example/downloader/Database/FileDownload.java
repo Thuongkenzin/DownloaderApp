@@ -9,12 +9,12 @@ public class FileDownload {
     public String uriFileDir;
 
 
-    public FileDownload(String urlDownload,String uriFileDir,long fileLength,int state){
+    public FileDownload(String urlDownload,String uriFileDir,long fileLength,int state, String fileName){
         this.urlDownload = urlDownload;
         this.state = state;
         this.uriFileDir = uriFileDir;
         this.fileLength = fileLength;
-        this.fileName = urlDownload.substring(urlDownload.lastIndexOf('/')+1);
+        this.fileName = fileName;
 
     }
 

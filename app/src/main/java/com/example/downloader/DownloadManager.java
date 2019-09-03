@@ -3,7 +3,6 @@ package com.example.downloader;
 import android.content.Context;
 import android.util.Log;
 
-import com.example.downloader.Database.DownloadContract;
 import com.example.downloader.Database.DownloadDatabaseHelper;
 import com.example.downloader.Database.FileChunk;
 import com.example.downloader.DownloadChunk.DownloadChunk;
@@ -24,7 +23,6 @@ public class DownloadManager {
     private static DownloadManager instance;
     private List<FileDownload> completeListDownload;
     private UpdateListDownloadListener listenerUpdate;
-
     private List<DownloadMultipleChunk> listDownloadFile;
     private DownloadManager() {
 
@@ -67,15 +65,6 @@ public class DownloadManager {
         return requestDbExecutor;
     }
 
-    public void startAllDownload() {
-        if(listDownloadFile.size() !=0) {
-            for (DownloadMultipleChunk thread : listDownloadFile) {
-                //pool.submit(thread);
-                threadPoolExecutor.execute(thread);
-                //thread.pauseChunkDownload();
-            }
-        }
-    }
     public void resumeDownloadMultipleChunk(DownloadMultipleChunk downloadMultipleChunk){
         downloadMultipleChunk.setStateDownload(DownloadMultipleChunk.MODE_RESUME);
         threadPoolExecutor.execute(downloadMultipleChunk);
@@ -90,16 +79,20 @@ public class DownloadManager {
     }
 
     public void startUrlDownload(String url,Context context) {
-        DownloadMultipleChunk downloadTask = new DownloadMultipleChunk(url,context);
-        listDownloadFile.add(0,downloadTask);
+        int count = checkCountFileDownloaded(url);
+        String fileName = url.substring(url.lastIndexOf('/')+1);
+        if(count >0) {
+            String extensionCount = "("+count+")";
+            char[] extCountArr = extensionCount.toCharArray();
+            StringBuilder nameBuilder = new StringBuilder();
+            nameBuilder.append(fileName);
+            int pos = fileName.indexOf('.');
+            nameBuilder.insert(pos,extCountArr,0,extCountArr.length);
+            fileName = nameBuilder.toString();
+        }
+        DownloadMultipleChunk downloadTask = new DownloadMultipleChunk(url,fileName, context);
+        listDownloadFile.add(0, downloadTask);
         threadPoolExecutor.execute(downloadTask);
-    }
-
-    public DownloadMultipleChunk startDownloadTask(String url){
-        DownloadMultipleChunk downloadTask = new DownloadMultipleChunk(url);
-        listDownloadFile.add(0,downloadTask);
-        threadPoolExecutor.execute(downloadTask);
-        return downloadTask;
     }
 
     public void cancelDownload(DownloadMultipleChunk downloadTask) {
@@ -118,26 +111,54 @@ public class DownloadManager {
             @Override
             public void run() {
                 DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
-                databaseHelper.deleteFileDownload(idFileDelete);
+                try {
+                    databaseHelper.deleteFileDownload(idFileDelete);
+                }catch (Exception e){
+                    e.printStackTrace();
+                    Log.v("Cannot delete file","id:" + idFileDelete);
+                }
             }
         });
 
     }
 
+    public void updateFileDownloadToDatabase(final Context context, final String fileName){
+        requestDbExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
+                for(int i = 0;i<listDownloadFile.size();i++){
+                    DownloadMultipleChunk downloadTask = listDownloadFile.get(i);
+                    if(downloadTask.getFileName().equals(fileName)){
+                        FileDownload fileDownload = new FileDownload(downloadTask.getUrlDownload(), downloadTask.getPathFile(),
+                                downloadTask.getFileSize(), DownloadEntry.STATE_UNCOMPLETE,fileName);
+                        long idFile = databaseHelper.addOrUpdateFileDownload(fileDownload);
+                        List<DownloadChunk> listDownloadChunk = downloadTask.getListChunkDownload();
+                        for (DownloadChunk fileSmallChunk : listDownloadChunk) {
+                            databaseHelper.addOrUpdateChunkDownloadFile(idFile, fileSmallChunk);
+                        }
+                    }
+                }
+            }
+        });
+    }
     public void saveDownloadFileToDatabaseBeforeExit(final Context context){
         requestDbExecutor.execute(new Runnable() {
             @Override
             public void run() {
                 DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
-                for(DownloadMultipleChunk chunk: listDownloadFile){
-                    FileDownload fileDownload = new FileDownload(chunk.getUrlDownload(),chunk.getPathFile(),
-                            chunk.getFileSize(),DownloadEntry.STATE_UNCOMPLETE);
-                    long idFile =databaseHelper.addOrUpdateFileDownload(fileDownload);
-                    List<DownloadChunk>  listDownloadChunk = chunk.getListChunkDownload();
-                    for(DownloadChunk fileSmallChunk: listDownloadChunk){
-                        databaseHelper.addOrUpdateChunkDownloadFile(idFile,fileSmallChunk);
-                    }
+                //avoid error java.util.ConcurrentModificationException.
+                if(listDownloadFile.size() > 0) {
+                    for (DownloadMultipleChunk chunk : listDownloadFile) {
+                        FileDownload fileDownload = new FileDownload(chunk.getUrlDownload(), chunk.getPathFile(),
+                                chunk.getFileSize(), DownloadEntry.STATE_UNCOMPLETE,chunk.getFileName());
+                        long idFile = databaseHelper.addOrUpdateFileDownload(fileDownload);
+                        List<DownloadChunk> listDownloadChunk = chunk.getListChunkDownload();
+                        for (DownloadChunk fileSmallChunk : listDownloadChunk) {
+                            databaseHelper.addOrUpdateChunkDownloadFile(idFile, fileSmallChunk);
+                        }
 
+                    }
                 }
                 for(FileDownload fileDownload: completeListDownload){
                     databaseHelper.addOrUpdateFileDownload(fileDownload);
@@ -221,12 +242,31 @@ public class DownloadManager {
         return -1;
     }
 
-    public void cancelAllDownloadTask(){
+    public void cancelAllDownloadTask(Context context){
         for (DownloadMultipleChunk downloadTask:
              listDownloadFile) {
             downloadTask.cancelChunkDownload();
+            deleteFileFromDatabase(context,downloadTask.getId());
         }
         listDownloadFile.clear();
     }
 
+    private int checkCountFileDownloaded(String url){
+        int count =0;
+        for(DownloadMultipleChunk downloadTask : listDownloadFile){
+            if(downloadTask.getUrlDownload().equals(url))
+                count++;
+        }
+
+        for(FileDownload fileDownload : completeListDownload){
+            if(fileDownload.getUrlDownload().equals(url)){
+                count++;
+            }
+        }
+        return count;
+    }
+    public void clearListCompleteDownload(){
+        completeListDownload.clear();
+        listenerUpdate.updateList();
+    }
 }

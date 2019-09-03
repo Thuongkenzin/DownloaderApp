@@ -139,9 +139,6 @@ public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
                                 builder.show();
 
                                 break;
-                            case R.id.detail_item:
-                                Toast.makeText(getContext(), "detail file", Toast.LENGTH_SHORT).show();
-                                break;
                         }
                         return false;
                     }

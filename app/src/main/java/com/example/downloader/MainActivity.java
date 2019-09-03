@@ -1,11 +1,14 @@
 package com.example.downloader;
 
+import android.Manifest;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StrictMode;
@@ -13,6 +16,7 @@ import android.support.annotation.NonNull;
 
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
@@ -53,7 +57,11 @@ public class MainActivity extends AppCompatActivity {
                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
                 break;
             case R.id.open_download:
-                startActivity(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS));
+                //startActivity(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS));
+                openDownloadFolder();
+                break;
+            case R.id.delete_list:
+                downloadManager.clearListCompleteDownload();
                 break;
         }
         return super.onOptionsItemSelected(item);
@@ -73,8 +81,12 @@ public class MainActivity extends AppCompatActivity {
         actionBar.setDisplayHomeAsUpEnabled(true);
        // actionBar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
 
-        downloadManager.getFileDownloadFromDatabase(this);
-        //downloadManager.startAllDownload();
+        getPermission();
+        if(downloadManager.getListDownloadFile().size() == 0) {
+            downloadManager.getListDownloadFile().clear();
+            downloadManager.getCompleteListDownload().clear();
+            downloadManager.getFileDownloadFromDatabase(this);
+        }
         createViewPagerLayout();
 
         mDrawerLayout = findViewById(R.id.drawer_layout);
@@ -89,7 +101,8 @@ public class MainActivity extends AppCompatActivity {
                 menuItem.setChecked(true);
                 switch (menuItem.getItemId()){
                     case R.id.download_dir:
-                        startActivity(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS));
+                        //startActivity(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS));
+                        openDownloadFolder();
                         break;
                 }
                 mDrawerLayout.closeDrawers();
@@ -143,42 +156,37 @@ public class MainActivity extends AppCompatActivity {
     }
     private void openDownloadFolder(){
         if(new CheckForSDCard().isSDCardPresent()){
-
-            File apkStorage = new File(Environment.getExternalStorageDirectory()+"/" + "Android Download");
-            Log.d("MainActivity","File Storage:" + apkStorage.getAbsolutePath());
-
-            if(!apkStorage.exists()){
-                Toast.makeText(this, "There is no directory", Toast.LENGTH_SHORT).show();
-            }
-            else{
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath() +"/" +"Android Download");
-                Uri uri2 = Uri.parse(Environment.DIRECTORY_DOWNLOADS);
-                Log.d("MainActivity", "URI:" + uri.toString());
-                intent.setDataAndType(uri2, "*/*");
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                Uri uri = Uri.parse(Environment.DIRECTORY_DOWNLOADS);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setDataAndType(uri, "*/*");
                 //startActivity(Intent.createChooser(intent,"Open Download Folder"));
                 startActivity(intent);
-            }
         }else {
             Toast.makeText(MainActivity.this, "There is no SD Card.", Toast.LENGTH_SHORT).show();
         }
 
 
     }
-    private boolean isConnectingToInternet(){
-        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo netWorkInfo = connectivityManager.getActiveNetworkInfo();
-        if(netWorkInfo!=null && netWorkInfo.isConnected())
-            return true;
-        else
-            return false;
-    }
-
 
     @Override
     protected void onStop() {
         super.onStop();
-        downloadManager.saveDownloadFileToDatabaseBeforeExit(this);
+        //downloadManager.saveDownloadFileToDatabaseBeforeExit(this);
     }
+
+    private void getPermission(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                //do nothing
+            }
+            else {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
+
+            }
+        }
+    }
+
 
 }

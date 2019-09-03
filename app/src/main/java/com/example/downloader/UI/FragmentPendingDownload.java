@@ -87,6 +87,9 @@ public class FragmentPendingDownload extends Fragment {
                 if(downloadThreadAdapter.getItemCount() == 0){
                     mEmtyTextView.setVisibility(View.VISIBLE);
                     mRecyclerView.setVisibility(View.GONE);
+                    Intent stopServiceIntent = new Intent(getContext(),DownloadService.class);
+                    stopServiceIntent.setAction(DownloadService.ACTION_STOP_SERVICE_DOWNLOAD);
+                    getContext().startService(stopServiceIntent);
                 }else{
                     mRecyclerView.setVisibility(View.VISIBLE);
                     mEmtyTextView.setVisibility(View.GONE);
@@ -113,6 +116,7 @@ public class FragmentPendingDownload extends Fragment {
                 final EditText input = new EditText(getContext());
                 input.setInputType(InputType.TYPE_CLASS_TEXT);
                 input.setHint("Type or paste link");
+                input.setText("http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
                 builder.setView(input);
 
                 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -126,6 +130,7 @@ public class FragmentPendingDownload extends Fragment {
                                         .setAction(DownloadService.ACTION_SEND_URL_DOWNLOAD);
                                 intentDownload.putExtra(DownloadService.URL_FILE_DOWNLOAD, url);
                                 getContext().startService(intentDownload);
+                                //testDownload();
                             } else {
                                 Toast.makeText(getContext(), "Url is invalid, please try again!", Toast.LENGTH_SHORT).show();
                             }

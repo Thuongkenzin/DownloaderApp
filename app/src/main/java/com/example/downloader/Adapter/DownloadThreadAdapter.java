@@ -134,15 +134,18 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
             mCancelButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    downloadThread.pauseChunkDownload();
+                    if(downloadThread.getStateDownload() != DownloadMultipleChunk.DOWNLOAD_PAUSE) {
+                        downloadThread.pauseChunkDownload();
+                    }
                     AlertDialog.Builder builder = new AlertDialog.Builder(mProgressBarDownload.getContext());
                     builder.setTitle("Do you want to stop downloading this file?");
                     builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             downloadManager.cancelDownload(downloadThread);
+                            downloadManager.deleteFileFromDatabase(mCancelButton.getContext(),
+                                    downloadThread.getId());
                             notifyItemRemoved(getAdapterPosition());
-                            //notifyDataSetChanged();
                         }
                     });
                     builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
