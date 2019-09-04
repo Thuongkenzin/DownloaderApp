@@ -26,7 +26,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.downloader.Adapter.DownloadThreadAdapter;
-import com.example.downloader.DownloadChunk.DownloadMultipleChunk;
 import com.example.downloader.DownloadService;
 import com.example.downloader.R;
 
@@ -42,7 +41,7 @@ import com.example.downloader.R;
 public class FragmentPendingDownload extends Fragment {
     final com.example.downloader.DownloadManager downloadManager = com.example.downloader.DownloadManager.getInstance();
     private RecyclerView mRecyclerView;
-    private TextView mEmtyTextView;
+    private TextView mEmptyTextView;
     private FloatingActionButton mAddLinkButton;
     private DownloadThreadAdapter downloadThreadAdapter;
 
@@ -56,11 +55,11 @@ public class FragmentPendingDownload extends Fragment {
         mRecyclerView = view.findViewById(R.id.rv_numbers);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         mRecyclerView.setLayoutManager(layoutManager);
-        mEmtyTextView = view.findViewById(R.id.empty_text_view);
+        mEmptyTextView = view.findViewById(R.id.empty_text_view);
         downloadThreadAdapter = new DownloadThreadAdapter();
         mRecyclerView.setAdapter(downloadThreadAdapter);
         if(downloadThreadAdapter.getItemCount() == 0) {
-            mEmtyTextView.setVisibility(View.VISIBLE);
+            mEmptyTextView.setVisibility(View.VISIBLE);
             mRecyclerView.setVisibility(View.GONE);
         }
 
@@ -85,14 +84,11 @@ public class FragmentPendingDownload extends Fragment {
 
             public void checkEmpty(){
                 if(downloadThreadAdapter.getItemCount() == 0){
-                    mEmtyTextView.setVisibility(View.VISIBLE);
+                    mEmptyTextView.setVisibility(View.VISIBLE);
                     mRecyclerView.setVisibility(View.GONE);
-                    Intent stopServiceIntent = new Intent(getContext(),DownloadService.class);
-                    stopServiceIntent.setAction(DownloadService.ACTION_STOP_SERVICE_DOWNLOAD);
-                    getContext().startService(stopServiceIntent);
                 }else{
                     mRecyclerView.setVisibility(View.VISIBLE);
-                    mEmtyTextView.setVisibility(View.GONE);
+                    mEmptyTextView.setVisibility(View.GONE);
                 }
             }
         });
@@ -116,7 +112,7 @@ public class FragmentPendingDownload extends Fragment {
                 final EditText input = new EditText(getContext());
                 input.setInputType(InputType.TYPE_CLASS_TEXT);
                 input.setHint("Type or paste link");
-                input.setText("http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
+                //input.setText("http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
                 builder.setView(input);
 
                 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -144,6 +140,7 @@ public class FragmentPendingDownload extends Fragment {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
+                        //testDownload();
                     }
                 });
                 builder.show();
@@ -190,13 +187,13 @@ public class FragmentPendingDownload extends Fragment {
     public void testDownload(){
         Intent intentDownload2 = new Intent(getContext(), DownloadService.class)
                 .setAction(DownloadService.ACTION_SEND_URL_DOWNLOAD);
-        String url2 = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+        String url2 = "http://speedtest.ftp.otenet.gr/files/test10Mb.db";
         intentDownload2.putExtra(DownloadService.URL_FILE_DOWNLOAD, url2);
         getContext().startService(intentDownload2);
 
         Intent intentDownload3 = new Intent(getContext(), DownloadService.class)
                 .setAction(DownloadService.ACTION_SEND_URL_DOWNLOAD);
-        String url3 = "https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
+        String url3 = "https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_2mb.mp4";
         intentDownload3.putExtra(DownloadService.URL_FILE_DOWNLOAD, url3);
         getContext().startService(intentDownload3);
     }

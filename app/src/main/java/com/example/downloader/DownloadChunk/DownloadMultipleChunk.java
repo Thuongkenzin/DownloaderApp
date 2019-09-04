@@ -33,7 +33,7 @@ public class DownloadMultipleChunk implements Runnable {
     public static final String ACTION_CANCEL_DOWNLOAD_TASK = "ACTION_CANCEL_DOWNLOAD_TASK";
     public static final String ACTION_PAUSE_DOWNLOAD_TASK = "ACTION_PAUSE_DOWNLOAD_TASK";
     public static final String ACTION_RESUME_DOWNLOAD_TASK = "action_resume_download_task";
-    long id;
+    private long id;
     private String fileName ;
     private String pathFile ;
     private String urlDownload ;
@@ -115,7 +115,7 @@ public class DownloadMultipleChunk implements Runnable {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -300,9 +300,10 @@ public class DownloadMultipleChunk implements Runnable {
         public void run() {
             sumDownload = getDownloadedSizeFromChunkFile();
             percent = (int) (100 * sumDownload / fileSize);
-            long speedDownload = (sumDownload - preSumDownload);
+            long speedDownload = (sumDownload - preSumDownload);//interval 1000ms
             if(percent % 10 ==0){
-                DownloadManager.getInstance().saveDownloadFileToDatabaseBeforeExit(context);
+                DownloadManager.getInstance().saveDownloadFileToDatabase(context);
+                createNotificationForFileDownload();
             }
             if(listener!=null) {
                 listener.updateProgress(percent, sumDownload, speedDownload);
@@ -312,10 +313,8 @@ public class DownloadMultipleChunk implements Runnable {
                 notificationManager.notify(notificationId,builderNotification.build());
 
             }
-           // mHandler.postDelayed(this,1000);
-            if (!isComplete()) {
-                mHandler.postDelayed(this, 1000);
-            }else{
+            mHandler.postDelayed(this,1000);
+            if (isComplete()) {
                 stateDownload = DownloadMultipleChunk.DOWNLOAD_SUCCESS;
                 mHandler.removeCallbacks(this);
                 updateCompleteListener.notifyCompleteDownloadFile();
@@ -375,7 +374,7 @@ public class DownloadMultipleChunk implements Runnable {
     public NotificationCompat.Action pauseNotificationDownload(Context context){
         Intent pauseIntent = new Intent(context, DownloadService.class);
         pauseIntent.setAction(ACTION_PAUSE_DOWNLOAD_TASK);
-        pauseIntent.putExtra("name", fileName);
+        pauseIntent.putExtra("idFile", id);
         Log.v(TAG, "PAUSE " + fileName);
         PendingIntent pauseDownloadPendingIntent = PendingIntent.getService(
                 context,
@@ -395,13 +394,14 @@ public class DownloadMultipleChunk implements Runnable {
     public NotificationCompat.Action cancelNotificationDownload(Context context) {
         Intent cancelIntent = new Intent(context, DownloadService.class);
         cancelIntent.setAction(ACTION_CANCEL_DOWNLOAD_TASK);
-        cancelIntent.putExtra("name", fileName);
+        cancelIntent.putExtra("idFile", id);
+        Log.v("Database:", "idFileCancel:"+ id);
         Log.v(TAG, "CANCEL " + fileName);
         PendingIntent cancelDownloadPendingIntent = PendingIntent.getService(
                 context,
                 notificationId + 2,
                 cancelIntent,
-                PendingIntent.FLAG_CANCEL_CURRENT);
+                PendingIntent.FLAG_UPDATE_CURRENT);
 
         NotificationCompat.Action cancelNotificationAction = new NotificationCompat.Action(
                 0,
@@ -413,13 +413,13 @@ public class DownloadMultipleChunk implements Runnable {
     private NotificationCompat.Action resumeNotificationDownload(Context context){
         Intent resumeIntent = new Intent(context, DownloadService.class);
         resumeIntent.setAction(ACTION_RESUME_DOWNLOAD_TASK);
-        resumeIntent.putExtra("name",fileName);
+        resumeIntent.putExtra("idFile",id);
         Log.v(TAG, "RESUME :" + fileName);
         PendingIntent resumeDownloadPendingIntent = PendingIntent.getService(
                 context,
                 notificationId +3,
                 resumeIntent,
-                PendingIntent.FLAG_CANCEL_CURRENT);
+                PendingIntent.FLAG_UPDATE_CURRENT);
         NotificationCompat.Action resumeNotificationAction = new NotificationCompat.Action(
                 0,
                 "Resume",
@@ -432,11 +432,8 @@ public class DownloadMultipleChunk implements Runnable {
         if(stateDownload == DOWNLOAD_PAUSE) {
             builderNotification.mActions.remove(0);
             builderNotification.mActions.add(0,resumeNotificationDownload(context));
+            builderNotification.setOngoing(false);
             notificationManager.notify(notificationId, builderNotification.build());
-//        }else if(stateDownload == MODE_RESUME){
-//            builderNotification.mActions.remove(0);
-//            builderNotification.mActions.add(0,pauseNotificationDownload(context));
-//            notificationManager.notify(notificationId,builderNotification.build());
         }
     }
 }

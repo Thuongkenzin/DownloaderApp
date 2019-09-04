@@ -242,7 +242,7 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
                 Cursor cursor = db.rawQuery(fileSelectQuery, new String[]{file.getFileName()});
                 try{
                     if(cursor.moveToFirst()){
-                        fileId = cursor.getInt(cursor.getColumnIndex(DownloadEntry._ID));
+                        fileId = cursor.getLong(cursor.getColumnIndex(DownloadEntry._ID));
                         db.setTransactionSuccessful();
                     }
                 }finally {
@@ -253,6 +253,7 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
             }else {
                 //file did not already exist, so insert new file
                 fileId = db.insertOrThrow(DownloadEntry.TABLE_NAME,null,values);
+                file.set_id(fileId);
                 db.setTransactionSuccessful();
             }
         }catch (Exception e){

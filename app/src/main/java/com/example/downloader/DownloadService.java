@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import com.example.downloader.DownloadChunk.DownloadMultipleChunk;
 import com.example.downloader.Utilities.NotificationUtils;
@@ -60,8 +61,8 @@ public class DownloadService extends Service {
                     break;
                     //send data to recycler view to update UI
                 case DownloadMultipleChunk.ACTION_PAUSE_DOWNLOAD_TASK:
-                    String name = intent.getStringExtra("name");
-                    int position = downloadManager.pauseDownloadTask(name);
+                    long idFilePause = intent.getLongExtra("idFile",-1);
+                    int position = downloadManager.pauseDownloadTask(idFilePause);
                     if (position != -1) {
                         Intent pauseIntent = new Intent();
                         pauseIntent.setAction(ACTION_UPDATE_LIST_DOWNLOAD_PAUSE);
@@ -70,10 +71,10 @@ public class DownloadService extends Service {
                     }
                     break;
                 case DownloadMultipleChunk.ACTION_CANCEL_DOWNLOAD_TASK:
-                    String filename = intent.getStringExtra("name");
-                    int pos = downloadManager.cancelDownloadTask(filename);
-                    DownloadMultipleChunk downloadTask = downloadManager.getListDownloadFile().get(pos);
-                    downloadManager.deleteFileFromDatabase(context,downloadTask.getId());
+                    long idFileCancel = intent.getLongExtra("idFile",-1);
+                    Log.v("Database:","idFile DownloadService Cancel:" + idFileCancel);
+                    int pos = downloadManager.cancelDownloadTask(idFileCancel);
+                    downloadManager.deleteFileFromDatabase(context,idFileCancel);
                     if (pos != -1) {
                         Intent cancelIntent = new Intent();
                         cancelIntent.setAction(ACTION_UPDATE_LIST_DOWNLOAD_CANCEL);
@@ -82,8 +83,8 @@ public class DownloadService extends Service {
                     }
                     break;
                 case DownloadMultipleChunk.ACTION_RESUME_DOWNLOAD_TASK:
-                    String fileName = intent.getStringExtra("name");
-                    int resumePos = downloadManager.resumeDownloadMultipleChunk(fileName);
+                    long idFileResume = intent.getLongExtra("idFile",-1);
+                    int resumePos = downloadManager.resumeDownloadMultipleChunk(idFileResume);
                     if(resumePos != -1){
                         Intent resumeIntent = new Intent(ACTION_UPDATE_LIST_DOWNLOAD_PAUSE);
                         resumeIntent.putExtra("position", resumePos);
@@ -91,7 +92,7 @@ public class DownloadService extends Service {
                     }
                     break;
                 case ACTION_STOP_FOREGROUND_SERVICE:
-                    downloadManager.cancelAllDownloadTask(context);
+                    //downloadManager.cancelAllDownloadTask(context);
                     stopSelf();
                     NotificationUtils.clearAllNotifications(getApplicationContext());
                     Intent stopAllDownloadIntent = new Intent(ACTION_UPDATE_LIST_DOWNLOAD_STOP_ALL_DOWNLOAD);
