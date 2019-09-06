@@ -1,5 +1,6 @@
 package com.example.downloader.DownloadChunk;
 
+import android.media.MediaScannerConnection;
 import android.util.Log;
 
 import java.io.InputStream;
@@ -109,24 +110,26 @@ public class DownloadChunk implements Runnable {
 
     @Override
     public void run() {
-        switch (mMode) {
-            case DownloadMultipleChunk.MODE_NEW_DOWNLOAD:
-                break;
-            case DownloadMultipleChunk.MODE_RESTART:
-                totalDownload = 0;
-                break;
-            case DownloadMultipleChunk.MODE_RESUME:
-                state = DownloadMultipleChunk.MODE_RESUME;
-                break;
-            default:
-                break;
-        }
+//        switch (mMode) {
+//            case DownloadMultipleChunk.MODE_NEW_DOWNLOAD:
+//                break;
+//            case DownloadMultipleChunk.MODE_RESTART:
+//                totalDownload = 0;
+//                break;
+//            case DownloadMultipleChunk.MODE_RESUME:
+//                state = DownloadMultipleChunk.MODE_RESUME;
+//                break;
+//            default:
+//                break;
+//        }
+        mMode = DownloadMultipleChunk.MODE_RESUME;
+        state = DownloadMultipleChunk.MODE_RESUME;
         runDownload();
     }
 
     private void runDownload() {
 
-        if (totalDownload > end - 1) {
+        if (start >= end) {
             state = DownloadMultipleChunk.DOWNLOAD_SUCCESS;
             return;
         }
@@ -163,6 +166,7 @@ public class DownloadChunk implements Runnable {
                 fileChannel.write(byteBuffer, position);
                 start += count;
                 position = position + count;
+                Log.v(TAG,position +"");
 
                 if (isPausedOrCancelled()) {
                     in.close();
@@ -172,9 +176,11 @@ public class DownloadChunk implements Runnable {
                 }
             }
 
-            Log.v(TAG, "file Lenght:" + fileChannel.size());
+            Log.v(TAG, "file Length:" + fileChannel.size());
 
             state = DownloadMultipleChunk.DOWNLOAD_SUCCESS;
+            Log.v("Success","id"+id);
+            Log.v("Success","SUCCESS");
             in.close();
             fileChannel.close();
             connection.disconnect();

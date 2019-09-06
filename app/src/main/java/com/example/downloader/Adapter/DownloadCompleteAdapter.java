@@ -11,7 +11,6 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.MimeTypeMap;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
@@ -105,7 +104,6 @@ public class DownloadCompleteAdapter extends ArrayAdapter<FileDownload> {
                                         intent.setDataAndType(Uri.fromFile(file), mimeTypeFile);
                                         getContext().startActivity(intent);
                                     } else {
-                                        //DownloadDatabaseHelper.getInstance(getContext()).deleteFileDownload(downloadThread.get_id());
                                         downloadManager.deleteFileFromDatabase(getContext(),downloadThread.get_id());
                                         downloadManager.getCompleteListDownload().remove(downloadThread);
                                         notifyDataSetChanged();

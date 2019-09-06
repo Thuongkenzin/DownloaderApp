@@ -72,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
         //turnOnStrictMode();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
         StrictMode.setVmPolicy(builder.build());
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -101,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
                 menuItem.setChecked(true);
                 switch (menuItem.getItemId()){
                     case R.id.download_dir:
-                        //startActivity(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS));
+                        startActivity(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS));
                         openDownloadFolder();
                         break;
                 }
@@ -157,8 +156,10 @@ public class MainActivity extends AppCompatActivity {
     private void openDownloadFolder(){
         if(new CheckForSDCard().isSDCardPresent()){
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                Uri uri = Uri.parse(Environment.DIRECTORY_DOWNLOADS);
-                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                Uri uri = Uri.parse(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString());
+                Log.v("OpenDownload", "Path:" + uri.toString());
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                //intent.addCategory(Intent.CATEGORY_OPENABLE);
                 intent.setDataAndType(uri, "*/*");
                 //startActivity(Intent.createChooser(intent,"Open Download Folder"));
                 startActivity(intent);
@@ -167,12 +168,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        //downloadManager.saveDownloadFileToDatabaseBeforeExit(this);
     }
 
     private void getPermission(){

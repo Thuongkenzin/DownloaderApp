@@ -5,6 +5,7 @@ import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
@@ -27,6 +28,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
 
 public class DownloadMultipleChunk implements Runnable {
     private static final String TAG = DownloadMultipleChunk.class.getSimpleName();
@@ -38,9 +45,7 @@ public class DownloadMultipleChunk implements Runnable {
     private String pathFile ;
     private String urlDownload ;
     private List<DownloadChunk> listChunkDownload = new ArrayList<>();
-    public static final int ACTION_PAUSE_DOWNLOAD_PENDING_INTENT_ID= 100;
-    public static final int ACTION_CANCEL_DOWNLOAD_PENDING_INTENT_ID= 101;
-    public static final int ACTION_RESUME_DOWNLOAD_PENDING_INTENT_ID = 102;
+    ExecutorService chunkPool = Executors.newFixedThreadPool(3);
     public static final int DOWNLOAD_PAUSE = 0;
     public static final int DOWNLOAD_SUCCESS = 2;
     public static final int DOWNLOAD_CANCEL = 3;
@@ -71,6 +76,7 @@ public class DownloadMultipleChunk implements Runnable {
     private NotificationCompat.Builder builderNotification;
     private NotificationManagerCompat notificationManager;
     private Context context;
+    List<Future> futureList = new ArrayList<>();
     public void setOnUpdateProgressListener(UpdateProgressListener listener) {
         this.listener = listener;
     }
@@ -150,13 +156,16 @@ public class DownloadMultipleChunk implements Runnable {
     public void setStateDownload(int stateDownload) {
         this.stateDownload = stateDownload;
     }
+    public Context getContextDownload(){
+        return context;
+    }
 
     public DownloadMultipleChunk(String urlDownload,String fileName,Context context) {
         this.urlDownload = urlDownload;
         mHandler = new Handler(Looper.getMainLooper());
         stateDownload = MODE_RESUME;
         this.fileName =  fileName;
-        pathFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath()+
+        pathFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString()+
                 "/"+fileName;
         this.context = context;
         notificationId= NotificationUtils.createNotificationId();
@@ -198,19 +207,35 @@ public class DownloadMultipleChunk implements Runnable {
                     fileSize = length;
                     Log.v("TAG", "Length:" + length);
 
-                    if (urlConnection != null) {
-                        urlConnection.disconnect();
-                    }
+                    urlConnection.disconnect();
+
                     divideChunkToDownload(urlDownload, fileSize);
                 }
                 createNotificationForFileDownload();
 
-                startDownloadMultipleChunk();
+                //startDownloadMultipleChunk();
+
+                for(DownloadChunk chunk : listChunkDownload){
+                     Future future = chunkPool.submit(chunk);
+                     futureList.add(future);
+                }
+                mHandler.post(updateUi);
+                checkDownloadChunkDone();
 //                while (!isComplete()) {
 //                    if (stateDownload == DOWNLOAD_PAUSE || stateDownload == DOWNLOAD_CANCEL) {
 //                        return;
 //                    }
 //                }
+                if(isComplete()){
+                    MediaScannerConnection.scanFile(context, new String[]{pathFile}, null,
+                            new MediaScannerConnection.OnScanCompletedListener() {
+                        @Override
+                        public void onScanCompleted(String path, Uri uri) {
+                            Log.i("ExternalStorage", "Scanned " + path + ":");
+                            Log.i("ExternalStorage", "-> uri=" + uri);
+                        }
+                    });
+                }
 
                 Log.v(TAG,"end thread.");
             } catch (Exception e) {
@@ -220,7 +245,7 @@ public class DownloadMultipleChunk implements Runnable {
         }
     }
 
-    public void divideChunkToDownload(String urlDownload,long length) {
+    private void divideChunkToDownload(String urlDownload,long length) {
         DownloadChunk download_1 = new DownloadChunk(urlDownload,0,length/3,pathFile);
         listChunkDownload.add(download_1);
         DownloadChunk download_2 = new DownloadChunk(urlDownload,length/3+1,length/3*2,pathFile);
@@ -236,6 +261,12 @@ public class DownloadMultipleChunk implements Runnable {
             chunk.startChunkDownload(MODE_RESUME);
         }
         mHandler.post(updateUi);
+    }
+
+    private void checkDownloadChunkDone() throws ExecutionException, InterruptedException {
+        for(Future future:futureList){
+            future.get();
+        }
     }
 
     public boolean isComplete(){
@@ -322,6 +353,8 @@ public class DownloadMultipleChunk implements Runnable {
             }
             if(stateDownload == DOWNLOAD_PAUSE){
 //                mHandler.postDelayed(this,500);
+                listener.updateProgress(percent,sumDownload,0);
+                mHandler.post(this);
                 mHandler.removeCallbacks(this);
                 updateActionInNotification();
             }

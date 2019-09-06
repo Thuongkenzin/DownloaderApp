@@ -28,7 +28,7 @@ public class DownloadService extends Service {
 
     DownloadManager downloadManager = DownloadManager.getInstance();
     public static int idNotificationForeground = 100;
-    Context context ;
+    private Context context ;
 
     @Override
     public IBinder onBind(Intent intent) {

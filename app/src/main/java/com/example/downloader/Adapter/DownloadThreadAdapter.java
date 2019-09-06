@@ -1,13 +1,9 @@
 package com.example.downloader.Adapter;
 
 import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.support.annotation.NonNull;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,18 +22,11 @@ import java.util.List;
 
 public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAdapter.DownloadViewHolder> {
 
-    public static final String DOWNLOAD_NEW_TASK = "download_new_task";
-    List<DownloadMultipleChunk> downloadList ;
+    private List<DownloadMultipleChunk> downloadList ;
     DownloadManager downloadManager = DownloadManager.getInstance();
 
     public DownloadThreadAdapter() {
         this.downloadList = DownloadManager.getInstance().getListDownloadFile();
-    }
-
-    public void setData(List<DownloadMultipleChunk> list) {
-        downloadList.clear();
-        if(list!=null) downloadList.addAll(list);
-        Intent intent = new Intent(DOWNLOAD_NEW_TASK);
     }
 
     @NonNull
@@ -85,7 +74,7 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
             if(downloadThread.getFileSize() !=0){
                 int percent = (int)(downloadThread.getTotalDownloadPrev()*100/downloadThread.getFileSize());
                 mProgressBarDownload.setProgress(percent);
-                mDescriptionTextView.setText(percent+"% - "+"0/s"+" - "+
+                mDescriptionTextView.setText(percent+"% - "+"0.00KB/s"+" - "+
                         DownloadUtil.getStringSizeLengthFile(downloadThread.getTotalDownloadPrev())+"/" +
                         DownloadUtil.getStringSizeLengthFile(downloadThread.getFileSize()));
 
@@ -112,6 +101,8 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
                 @Override
                 public void notifyCompleteDownloadFile() {
                     downloadManager.addFileDownloadDoneToListComplete(downloadThread);
+                    downloadManager.updateFileDownloadCompleteToDatabase(downloadThread.getContextDownload(),
+                            downloadThread.getId());
                     notifyItemRemoved(getAdapterPosition());
                 }
             });
@@ -124,7 +115,6 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
                         downloadThread.pauseChunkDownload();
                     }else if(downloadThread.getStateDownload() == DownloadMultipleChunk.DOWNLOAD_PAUSE){
                         mPlayPauseButton.setImageResource(R.drawable.ic_pause_24dp);
-                        //downloadThread.resumeChunkDownload();
                         downloadManager.resumeDownloadMultipleChunk(downloadThread);
                     }
 

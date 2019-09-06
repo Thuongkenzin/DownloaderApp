@@ -10,6 +10,7 @@ import com.example.downloader.DownloadChunk.DownloadMultipleChunk;
 import com.example.downloader.Database.FileDownload;
 import com.example.downloader.Database.DownloadContract.DownloadEntry;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -123,22 +124,15 @@ public class DownloadManager {
 
     }
 
-    public void updateFileDownloadToDatabase(final Context context, final String fileName){
+    public void updateFileDownloadCompleteToDatabase(final Context context, final long idFile){
         requestDbExecutor.execute(new Runnable() {
             @Override
             public void run() {
                 DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance(context);
-                for(int i = 0;i<listDownloadFile.size();i++){
-                    DownloadMultipleChunk downloadTask = listDownloadFile.get(i);
-                    if(downloadTask.getFileName().equals(fileName)){
-                        FileDownload fileDownload = new FileDownload(downloadTask.getUrlDownload(),
-                                downloadTask.getPathFile(), downloadTask.getFileSize(),
-                                DownloadEntry.STATE_UNCOMPLETE,fileName);
-                        long idFile = databaseHelper.addOrUpdateFileDownload(fileDownload);
-                        List<DownloadChunk> listDownloadChunk = downloadTask.getListChunkDownload();
-                        for (DownloadChunk fileSmallChunk : listDownloadChunk) {
-                            databaseHelper.addOrUpdateChunkDownloadFile(idFile, fileSmallChunk);
-                        }
+                for(int i=0;i<completeListDownload.size();i++){
+                    FileDownload fileDownload = completeListDownload.get(i);
+                    if(fileDownload.get_id() == idFile){
+                        databaseHelper.updateFileDownload(fileDownload);
                     }
                 }
             }
