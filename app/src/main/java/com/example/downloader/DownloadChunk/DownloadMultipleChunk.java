@@ -37,6 +37,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 public class DownloadMultipleChunk implements Runnable {
     private static final String TAG = DownloadMultipleChunk.class.getSimpleName();
+    private static final int NUMBER_OF_CHUNK = 3;
     public static final String ACTION_CANCEL_DOWNLOAD_TASK = "ACTION_CANCEL_DOWNLOAD_TASK";
     public static final String ACTION_PAUSE_DOWNLOAD_TASK = "ACTION_PAUSE_DOWNLOAD_TASK";
     public static final String ACTION_RESUME_DOWNLOAD_TASK = "action_resume_download_task";
@@ -45,7 +46,7 @@ public class DownloadMultipleChunk implements Runnable {
     private String pathFile ;
     private String urlDownload ;
     private List<DownloadChunk> listChunkDownload = new ArrayList<>();
-    ExecutorService chunkPool = Executors.newFixedThreadPool(3);
+    ExecutorService chunkPool = Executors.newFixedThreadPool(NUMBER_OF_CHUNK);
     public static final int DOWNLOAD_PAUSE = 0;
     public static final int DOWNLOAD_SUCCESS = 2;
     public static final int DOWNLOAD_CANCEL = 3;
@@ -206,7 +207,6 @@ public class DownloadMultipleChunk implements Runnable {
                     long length = urlConnection.getContentLength();
                     fileSize = length;
                     Log.v("TAG", "Length:" + length);
-
                     urlConnection.disconnect();
 
                     divideChunkToDownload(urlDownload, fileSize);
@@ -246,12 +246,14 @@ public class DownloadMultipleChunk implements Runnable {
     }
 
     private void divideChunkToDownload(String urlDownload,long length) {
-        DownloadChunk download_1 = new DownloadChunk(urlDownload,0,length/3,pathFile);
-        listChunkDownload.add(download_1);
-        DownloadChunk download_2 = new DownloadChunk(urlDownload,length/3+1,length/3*2,pathFile);
-        listChunkDownload.add(download_2);
-        DownloadChunk download_3 = new DownloadChunk(urlDownload,length/3*2 +1,length,pathFile);
-        listChunkDownload.add(download_3);
+        long start = 0;
+        long end;
+        for (int i = 1; i <= NUMBER_OF_CHUNK; i++) {
+            end = length / NUMBER_OF_CHUNK * i;
+            DownloadChunk chunk = new DownloadChunk(urlDownload, start, end, pathFile);
+            listChunkDownload.add(chunk);
+            start = end + 1;
+        }
     }
 
 

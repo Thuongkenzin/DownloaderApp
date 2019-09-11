@@ -112,7 +112,9 @@ public class FragmentPendingDownload extends Fragment {
                 final EditText input = new EditText(getContext());
                 input.setInputType(InputType.TYPE_CLASS_TEXT);
                 input.setHint("Type or paste link");
-                input.setText("http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
+//                String testUrl = "https://file-examples.com/wp-content/uploads/2017/11/file_example_WAV_5MG.wav";
+//
+//                input.setText(testUrl);
                 builder.setView(input);
 
                 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -140,7 +142,7 @@ public class FragmentPendingDownload extends Fragment {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
-                        testDownload();
+                        //testDownload();
                     }
                 });
                 builder.show();

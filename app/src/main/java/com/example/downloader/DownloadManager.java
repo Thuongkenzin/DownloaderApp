@@ -32,7 +32,7 @@ public class DownloadManager {
     }
 
     private ExecutorService requestDbExecutor = Executors.newSingleThreadExecutor();
-    private ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(3,3,60, TimeUnit.SECONDS,
+    private ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(THREAD_POOL_SIZES,THREAD_POOL_SIZES,60, TimeUnit.SECONDS,
             new LinkedBlockingDeque<Runnable>());
 
     public void setOnUpdateListDownloadListener(UpdateListDownloadListener listener) {
