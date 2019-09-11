@@ -3,6 +3,7 @@ package com.example.downloader.DownloadChunk;
 import android.media.MediaScannerConnection;
 import android.util.Log;
 
+
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
@@ -124,7 +125,9 @@ public class DownloadChunk implements Runnable {
 //        }
         mMode = DownloadMultipleChunk.MODE_RESUME;
         state = DownloadMultipleChunk.MODE_RESUME;
+
         runDownload();
+
     }
 
     private void runDownload() {

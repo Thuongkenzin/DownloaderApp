@@ -2,8 +2,11 @@ package com.example.downloader;
 
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -25,10 +28,12 @@ public class DownloadService extends Service {
     public static final String ACTION_STOP_FOREGROUND_SERVICE = "action_stop_foreground_service";
     public static final String ACTION_UPDATE_LIST_DOWNLOAD_STOP_ALL_DOWNLOAD = "ACTION_UPDATE_LIST_DOWNLOAD_STOP_ALL_DOWNLOAD";
     public static final String ACTION_STOP_SERVICE_DOWNLOAD = "stop_service_download";
+    public static final String ACTION_PAUSE_ALL_DOWNLOAD = "pause_all_download";
 
     DownloadManager downloadManager = DownloadManager.getInstance();
     public static int idNotificationForeground = 100;
     private Context context ;
+    private BroadcastReceiver networkReceiver;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -40,6 +45,8 @@ public class DownloadService extends Service {
         super.onCreate();
         NotificationUtils.createNotificationChannel(getApplicationContext());
         context = getApplicationContext();
+        networkReceiver = new NetworkChangeReceiver();
+        registerReceiver(networkReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
     }
 
 
@@ -101,6 +108,11 @@ public class DownloadService extends Service {
                 case ACTION_STOP_SERVICE_DOWNLOAD:
                     stopSelf();
                     break;
+                case ACTION_PAUSE_ALL_DOWNLOAD:
+                    downloadManager.pauseAllDownloadTask();
+                    Intent pauseAllDownload = new Intent(ACTION_UPDATE_LIST_DOWNLOAD_STOP_ALL_DOWNLOAD);
+                    LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(pauseAllDownload);
+                    break;
             }
         }
         return super.onStartCommand(intent, flags, startId);
@@ -136,5 +148,6 @@ public class DownloadService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        unregisterReceiver(networkReceiver);
     }
 }

@@ -270,4 +270,9 @@ public class DownloadManager {
         completeListDownload.clear();
         listenerUpdate.updateList();
     }
+    public void pauseAllDownloadTask(){
+        for(DownloadMultipleChunk chunk: listDownloadFile){
+            chunk.pauseChunkDownload();
+        }
+    }
 }
