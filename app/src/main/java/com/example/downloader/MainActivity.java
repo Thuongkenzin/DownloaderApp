@@ -84,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
         if(downloadManager.getListDownloadFile().size() == 0) {
             downloadManager.getListDownloadFile().clear();
             downloadManager.getCompleteListDownload().clear();
-            downloadManager.getFileDownloadFromDatabase(this);
+            downloadManager.getFileDownloadFromDatabase(this.getApplicationContext());
         }
         createViewPagerLayout();
 
