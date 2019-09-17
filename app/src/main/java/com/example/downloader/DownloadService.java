@@ -15,6 +15,7 @@ import android.util.Log;
 import com.example.downloader.DownloadChunk.DownloadMultipleChunk;
 import com.example.downloader.Utilities.NotificationUtils;
 
+
 public class DownloadService extends Service {
 
     public static final String TAG = DownloadService.class.getSimpleName();
@@ -45,7 +46,7 @@ public class DownloadService extends Service {
         super.onCreate();
         NotificationUtils.createNotificationChannel(getApplicationContext());
         context = getApplicationContext();
-        networkReceiver = new NetworkChangeReceiver();
+        //networkReceiver = new NetworkChangeReceiver();
         registerReceiver(networkReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
     }
 
@@ -148,6 +149,6 @@ public class DownloadService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(networkReceiver);
+        //unregisterReceiver(networkReceiver);
     }
 }

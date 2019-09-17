@@ -20,7 +20,8 @@ public class NetworkChangeReceiver extends BroadcastReceiver {
         }
     }
     private boolean isConnectingToInternet(Context context){
-        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getApplicationContext()
+        .getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netWorkInfo = connectivityManager.getActiveNetworkInfo();
         if(netWorkInfo!=null && netWorkInfo.isConnected())
             return true;

@@ -27,7 +27,9 @@ import android.widget.Toast;
 
 import com.example.downloader.Adapter.DownloadThreadAdapter;
 import com.example.downloader.DownloadService;
+import com.example.downloader.MyApplication;
 import com.example.downloader.R;
+import com.squareup.leakcanary.RefWatcher;
 
 //Link download example
 //                String url ="https://www.nasa.gov/images/content/206402main_jsc2007e113280_hires.jpg";
@@ -112,9 +114,9 @@ public class FragmentPendingDownload extends Fragment {
                 final EditText input = new EditText(getContext());
                 input.setInputType(InputType.TYPE_CLASS_TEXT);
                 input.setHint("Type or paste link");
-//                String testUrl = "https://file-examples.com/wp-content/uploads/2017/11/file_example_WAV_5MG.wav";
-//
-//                input.setText(testUrl);
+                String testUrl = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+
+                input.setText(testUrl);
                 builder.setView(input);
 
                 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -151,7 +153,8 @@ public class FragmentPendingDownload extends Fragment {
         return view;
     }
     private boolean isConnectingToInternet(){
-        ConnectivityManager connectivityManager = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager connectivityManager = (ConnectivityManager) getActivity().getApplicationContext()
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netWorkInfo = connectivityManager.getActiveNetworkInfo();
         if(netWorkInfo!=null && netWorkInfo.isConnected())
             return true;
@@ -162,28 +165,31 @@ public class FragmentPendingDownload extends Fragment {
     private BroadcastReceiver mUpdateListDownloadReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_ADD)){
-                downloadThreadAdapter.notifyItemInserted(0);
+            if(downloadThreadAdapter != null) {
+                if (intent.getAction().equals(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_ADD)) {
+                    downloadThreadAdapter.notifyItemInserted(0);
+                }
+                if (intent.getAction().equals(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_PAUSE)) {
+                    int position = intent.getIntExtra("position", 0);
+                    downloadThreadAdapter.notifyItemChanged(position);
+                }
+                if (intent.getAction().equals(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_CANCEL)) {
+                    int position = intent.getIntExtra("position", 0);
+                    downloadThreadAdapter.notifyItemRemoved(position);
+                }
+                if (intent.getAction().equals(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_STOP_ALL_DOWNLOAD)) {
+                    downloadThreadAdapter.notifyDataSetChanged();
+                }
             }
-            if(intent.getAction().equals(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_PAUSE)){
-                int position = intent.getIntExtra("position",0);
-                downloadThreadAdapter.notifyItemChanged(position);
-            }
-            if(intent.getAction().equals(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_CANCEL)){
-                int position = intent.getIntExtra("position",0);
-                downloadThreadAdapter.notifyItemRemoved(position);
-            }
-            if(intent.getAction().equals(DownloadService.ACTION_UPDATE_LIST_DOWNLOAD_STOP_ALL_DOWNLOAD)){
-                downloadThreadAdapter.notifyDataSetChanged();
-            }
-
         }
     };
 
     @Override
     public void onDestroy() {
+        if(downloadThreadAdapter!= null){
+            downloadThreadAdapter = null;
+        }
         super.onDestroy();
-        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mUpdateListDownloadReceiver);
     }
 
     public void testDownload(){

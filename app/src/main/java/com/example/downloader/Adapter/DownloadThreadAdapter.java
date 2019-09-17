@@ -101,7 +101,7 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
                 @Override
                 public void notifyCompleteDownloadFile() {
                     downloadManager.addFileDownloadDoneToListComplete(downloadThread);
-                    downloadManager.updateFileDownloadCompleteToDatabase(downloadThread.getContextDownload(),
+                    downloadManager.updateFileDownloadCompleteToDatabase(downloadThread.getContextDownload().getApplicationContext(),
                             downloadThread.getId());
                     notifyItemRemoved(getAdapterPosition());
                 }
@@ -133,7 +133,7 @@ public class DownloadThreadAdapter extends RecyclerView.Adapter<DownloadThreadAd
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             downloadManager.cancelDownload(downloadThread);
-                            downloadManager.deleteFileFromDatabase(mCancelButton.getContext(),
+                            downloadManager.deleteFileFromDatabase(mCancelButton.getContext().getApplicationContext(),
                                     downloadThread.getId());
                             notifyItemRemoved(getAdapterPosition());
                         }
