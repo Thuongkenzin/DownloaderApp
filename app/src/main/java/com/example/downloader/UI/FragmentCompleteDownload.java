@@ -32,7 +32,6 @@ public class FragmentCompleteDownload extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_complete_download, container, false);
         listView = view.findViewById(R.id.list_item_download_complete);
-        Log.v(TAG,"size Download:" +listFileDownloaded.size());
         adapter = new DownloadCompleteAdapter(getContext(),listFileDownloaded);
         mUpdateListener = DownloadManager.getInstance().setOnUpdateListDownloadListener(new DownloadManager.UpdateListDownloadListener() {
             @Override

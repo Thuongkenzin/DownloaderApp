@@ -46,7 +46,7 @@ public class DownloadService extends Service {
         super.onCreate();
         NotificationUtils.createNotificationChannel(getApplicationContext());
         context = getApplicationContext();
-        //networkReceiver = new NetworkChangeReceiver();
+        networkReceiver = new NetworkChangeReceiver();
         registerReceiver(networkReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
     }
 
@@ -80,7 +80,6 @@ public class DownloadService extends Service {
                     break;
                 case DownloadMultipleChunk.ACTION_CANCEL_DOWNLOAD_TASK:
                     long idFileCancel = intent.getLongExtra("idFile",-1);
-                    Log.v("Database:","idFile DownloadService Cancel:" + idFileCancel);
                     int pos = downloadManager.cancelDownloadTask(idFileCancel);
                     downloadManager.deleteFileFromDatabase(context,idFileCancel);
                     if (pos != -1) {
@@ -149,6 +148,6 @@ public class DownloadService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        //unregisterReceiver(networkReceiver);
+        unregisterReceiver(networkReceiver);
     }
 }
